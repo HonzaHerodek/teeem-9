@@ -1,11 +1,12 @@
 import 'package:equatable/equatable.dart';
 import 'package:myapp/data/models/post_model.dart';
+import 'package:myapp/data/models/project_model.dart';
 
 abstract class FeedState extends Equatable {
   const FeedState();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class FeedInitial extends FeedState {
@@ -18,21 +19,32 @@ class FeedLoading extends FeedState {
 
 class FeedLoadingMore extends FeedState {
   final List<PostModel> posts;
+  final List<ProjectModel> projects;
 
-  const FeedLoadingMore({required this.posts});
+  const FeedLoadingMore({
+    required this.posts,
+    this.projects = const [],
+  });
 
   @override
-  List<Object> get props => [posts];
+  List<Object> get props => [posts, projects];
 }
 
 class FeedSuccess extends FeedState {
   final List<PostModel> posts;
+  final List<ProjectModel> projects;
   final String currentUserId;
+  final String? selectedProjectId;
 
-  const FeedSuccess({required this.posts, required this.currentUserId});
+  const FeedSuccess({
+    required this.posts,
+    required this.currentUserId,
+    this.projects = const [],
+    this.selectedProjectId,
+  });
 
   @override
-  List<Object> get props => [posts, currentUserId];
+  List<Object?> get props => [posts, projects, currentUserId, selectedProjectId];
 }
 
 class FeedFailure extends FeedState {

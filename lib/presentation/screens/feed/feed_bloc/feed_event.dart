@@ -119,3 +119,52 @@ class FeedSearchChanged extends FeedEvent {
   @override
   List<Object?> get props => [query];
 }
+
+// New project-related events
+class FeedProjectSelected extends FeedEvent {
+  final String projectId;
+
+  const FeedProjectSelected(this.projectId);
+
+  @override
+  List<Object?> get props => [projectId];
+}
+
+class FeedProjectCreated extends FeedEvent {
+  final String name;
+  final String description;
+
+  const FeedProjectCreated({
+    required this.name,
+    required this.description,
+  });
+
+  @override
+  List<Object?> get props => [name, description];
+}
+
+class FeedAddPostToProject extends FeedEvent {
+  final String projectId;
+  final String postId;
+
+  const FeedAddPostToProject({
+    required this.projectId,
+    required this.postId,
+  });
+
+  @override
+  List<Object?> get props => [projectId, postId];
+}
+
+class FeedRemovePostFromProject extends FeedEvent {
+  final String projectId;
+  final String postId;
+
+  const FeedRemovePostFromProject({
+    required this.projectId,
+    required this.postId,
+  });
+
+  @override
+  List<Object?> get props => [projectId, postId];
+}

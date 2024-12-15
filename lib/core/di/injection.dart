@@ -10,10 +10,12 @@ import '../../data/repositories/mock_post_repository.dart';
 import '../../data/repositories/mock_rating_service.dart';
 import '../../data/repositories/mock_step_type_repository.dart';
 import '../../data/repositories/mock_user_repository.dart';
+import '../../data/repositories/mock_project_repository.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/post_repository.dart';
 import '../../domain/repositories/step_type_repository.dart';
 import '../../domain/repositories/user_repository.dart';
+import '../../domain/repositories/project_repository.dart';
 import '../../presentation/widgets/filtering/services/filter_service.dart';
 
 final getIt = GetIt.instance;
@@ -33,4 +35,5 @@ void initializeDependencies() {
   getIt.registerLazySingleton<PostRepository>(() => MockPostRepository());
   getIt.registerLazySingleton<StepTypeRepository>(() => MockStepTypeRepository());
   getIt.registerLazySingleton<UserRepository>(() => MockUserRepository());
+  getIt.registerLazySingleton<ProjectRepository>(() => MockProjectRepository());
 }

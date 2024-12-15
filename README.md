@@ -150,6 +150,10 @@ lib/
     ├── screens/    # App screens
     └── widgets/    # Reusable widgets
 ```
+## Project Structure Details (Updates)
+          For a detailed overview of the project structure and explanation of each file's purpose, please refer to [app_structure.txt](app_structure.txt)
+
+
 
 ## Development Resources
 
