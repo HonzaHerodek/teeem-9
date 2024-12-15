@@ -44,7 +44,8 @@ class FeedSuccess extends FeedState {
   });
 
   @override
-  List<Object?> get props => [posts, projects, currentUserId, selectedProjectId];
+  List<Object?> get props =>
+      [posts, projects, currentUserId, selectedProjectId];
 }
 
 class FeedFailure extends FeedState {

@@ -4,11 +4,16 @@ import '../models/filter_type.dart';
 
 class FilterService {
   FilterType _currentFilter = FilterType.none;
+  String _searchQuery = '';
 
   FilterType get currentFilter => _currentFilter;
 
   void setFilter(FilterType filter) {
     _currentFilter = filter;
+  }
+
+  void setSearchQuery(String query) {
+    _searchQuery = query.toLowerCase();
   }
 
   List<PostModel> filterPosts(List<PostModel> posts, UserModel currentUser) {
@@ -18,31 +23,44 @@ class FilterService {
     // Then apply the selected filter type
     switch (_currentFilter) {
       case FilterType.group:
-        return filteredPosts.where((post) {
+        filteredPosts = filteredPosts.where((post) {
           final interests = post.targetingCriteria?.interests?.length ?? 0;
           final skills = post.targetingCriteria?.skills?.length ?? 0;
           return interests > 2 || skills > 2;
         }).toList();
+        break;
       
       case FilterType.pair:
-        return filteredPosts.where((post) {
+        filteredPosts = filteredPosts.where((post) {
           final interests = post.targetingCriteria?.interests?.length ?? 0;
           final skills = post.targetingCriteria?.skills?.length ?? 0;
           return interests == 2 || skills == 2;
         }).toList();
+        break;
       
       case FilterType.self:
-        return filteredPosts.where((post) {
+        filteredPosts = filteredPosts.where((post) {
           if (post.userId == currentUser.id) return true;
           final interests = post.targetingCriteria?.interests?.length ?? 0;
           final skills = post.targetingCriteria?.skills?.length ?? 0;
           return interests <= 1 && skills <= 1;
         }).toList();
+        break;
       
       case FilterType.none:
       default:
-        return filteredPosts;
+        break;
     }
+
+    // Apply search query if present
+    if (_searchQuery.isNotEmpty) {
+      filteredPosts = filteredPosts.where((post) =>
+        post.title.toLowerCase().contains(_searchQuery) ||
+        post.description.toLowerCase().contains(_searchQuery)
+      ).toList();
+    }
+
+    return filteredPosts;
   }
 
   bool _shouldShowPost(PostModel post, UserModel currentUser) {
