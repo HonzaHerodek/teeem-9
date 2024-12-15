@@ -8,18 +8,22 @@ class SelectableCompactPostCard extends StatelessWidget {
   final VoidCallback onToggle;
   final double width;
   final double height;
+  final bool isProjectPost;
 
   const SelectableCompactPostCard({
     super.key,
     required this.post,
     required this.isSelected,
     required this.onToggle,
+    required this.isProjectPost,
     this.width = 140,
     this.height = 140,
   });
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = isProjectPost ? Colors.red : Colors.green;
+    
     return GestureDetector(
       onTap: onToggle,
       child: Stack(
@@ -37,18 +41,17 @@ class SelectableCompactPostCard extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? Colors.green : Colors.red,
+                  color: borderColor,
                   width: 3,
                 ),
-                color: isSelected 
-                    ? Colors.green.withOpacity(0.2)
-                    : Colors.red.withOpacity(0.1),
               ),
               child: isSelected
-                  ? const Center(
+                  ? Center(
                       child: Icon(
-                        Icons.check_circle,
-                        color: Colors.green,
+                        isProjectPost 
+                            ? Icons.close_rounded  // Cross symbol for project posts
+                            : Icons.check_rounded, // Check symbol for available posts
+                        color: borderColor,
                         size: 40,
                       ),
                     )

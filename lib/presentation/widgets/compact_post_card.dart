@@ -192,9 +192,9 @@ class _CompactPostCardState extends State<CompactPostCard>
             Text(
               widget.post.title,
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2, // Changed from 1 to 2
               overflow: TextOverflow.ellipsis,
-              softWrap: false,
+              softWrap: true, // Changed from false to true
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24 * CompactPostCard._titleScale,
@@ -205,7 +205,7 @@ class _CompactPostCardState extends State<CompactPostCard>
             Text(
               widget.post.description,
               textAlign: TextAlign.center,
-              maxLines: 3,
+              maxLines: 2, // Changed from 3 to 2
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white,

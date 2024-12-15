@@ -120,7 +120,7 @@ class FeedSearchChanged extends FeedEvent {
   List<Object?> get props => [query];
 }
 
-// New project-related events
+// Project-related events
 class FeedProjectSelected extends FeedEvent {
   final String projectId;
 
@@ -167,4 +167,22 @@ class FeedRemovePostFromProject extends FeedEvent {
 
   @override
   List<Object?> get props => [projectId, postId];
+}
+
+class FeedProjectLiked extends FeedEvent {
+  final String projectId;
+
+  const FeedProjectLiked(this.projectId);
+
+  @override
+  List<Object?> get props => [projectId];
+}
+
+class FeedProjectUnliked extends FeedEvent {
+  final String projectId;
+
+  const FeedProjectUnliked(this.projectId);
+
+  @override
+  List<Object?> get props => [projectId];
 }

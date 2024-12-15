@@ -4,24 +4,25 @@ class CircularActionButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
   final bool isBold;
+  final double size;
 
   const CircularActionButton({
     super.key,
     required this.icon,
     required this.onPressed,
     this.isBold = false,
+    this.size = 56.0,
   });
 
   @override
   Widget build(BuildContext context) {
-    const double buttonSize = 56.0;
     const double strokeWidth = 2.0;
 
     return Stack(
       children: [
         Container(
-          width: buttonSize,
-          height: buttonSize,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
@@ -40,7 +41,9 @@ class CircularActionButton extends StatelessWidget {
                   icon,
                   key: ValueKey('action_button_icon_$icon'),
                   color: Colors.white,
-                  size: isBold ? 32.0 : 24.0,
+                  size: isBold
+                      ? size * 0.57
+                      : size * 0.43, // Maintain icon size ratio
                   weight: isBold ? 700 : 400,
                 ),
               ),

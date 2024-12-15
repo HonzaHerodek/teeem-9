@@ -151,6 +151,7 @@ class _PostSelectionSheetState extends State<PostSelectionSheet> {
                   post: post,
                   isSelected: _selectedPostIds.contains(post.id),
                   onToggle: () => _togglePostSelection(post.id),
+                  isProjectPost: false, // These are available posts
                 );
               },
             ),

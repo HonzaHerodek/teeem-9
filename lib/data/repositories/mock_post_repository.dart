@@ -13,12 +13,12 @@ class MockPostRepository implements PostRepository {
 
   void _initializeTestPosts() {
     _posts.clear();
-    // Add the long test post first to ensure it's at the top
-    final longPost = TestDataService.generateLongTestPost();
-    _posts.add(longPost);
-    // Add more test posts to ensure we have enough content
+    // Add test posts first to ensure post_0, post_1, etc. are available
     final testData = TestDataService.generateTestPosts(count: 5);
     _posts.addAll(testData);
+    // Add the long test post last since it has a different ID format
+    final longPost = TestDataService.generateLongTestPost();
+    _posts.add(longPost);
     // Force refresh the list to ensure changes are visible
     _posts.insert(0, _posts.removeLast());
   }
@@ -35,7 +35,11 @@ class MockPostRepository implements PostRepository {
   @override
   Future<PostModel> getPostById(String postId) async {
     await Future.delayed(_delay);
-    return _posts.firstWhere((post) => post.id == postId);
+    try {
+      return _posts.firstWhere((post) => post.id == postId);
+    } catch (e) {
+      throw Exception('Post not found: $postId');
+    }
   }
 
   @override
