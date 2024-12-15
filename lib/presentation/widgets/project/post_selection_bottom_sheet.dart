@@ -1,203 +1,121 @@
+// DEPRECATED: This file is no longer in use. 
+// The functionality has been moved to post_selection_sheet.dart which implements
+// the new UI with compact post cards and multi-selection capability.
+// Keeping this file for reference purposes only.
+
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/models/post_model.dart';
-import '../../../presentation/screens/feed/feed_bloc/feed_bloc.dart';
-import '../../../presentation/screens/feed/feed_bloc/feed_event.dart';
-import '../../../presentation/screens/feed/feed_bloc/feed_state.dart';
 
-class PostSelectionBottomSheet extends StatelessWidget {
-  final String projectId;
+class PostSelectionSheet extends StatelessWidget {
   final String projectName;
-  final List<String> existingPostIds;
+  final List<PostModel> availablePosts;
+  final Function(String) onPostSelected;
 
-  const PostSelectionBottomSheet({
+  const PostSelectionSheet({
     super.key,
-    required this.projectId,
     required this.projectName,
-    required this.existingPostIds,
+    required this.availablePosts,
+    required this.onPostSelected,
   });
 
-  static void show(BuildContext context, {
-    required String projectId,
+  static void show({
+    required BuildContext context,
     required String projectName,
-    required List<String> existingPostIds,
+    required List<PostModel> availablePosts,
+    required Function(String) onPostSelected,
   }) {
+    if (availablePosts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No available posts to add'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => PostSelectionBottomSheet(
-        projectId: projectId,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
+      builder: (context) => PostSelectionSheet(
         projectName: projectName,
-        existingPostIds: existingPostIds,
+        availablePosts: availablePosts,
+        onPostSelected: onPostSelected,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<FeedBloc, FeedState>(
-      builder: (context, state) {
-        if (state is! FeedSuccess) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Unable to add posts at this time'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return const SizedBox.shrink();
-        }
-
-        final availablePosts = state.posts.where(
-          (post) => !existingPostIds.contains(post.id)
-        ).toList();
-
-        if (availablePosts.isEmpty) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No available posts to add'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          return const SizedBox.shrink();
-        }
-
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.9),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeader(context),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Select a post to add to this project:',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 14,
+    return SafeArea(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.9),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Add Post to $projectName',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-                _buildPostList(context, availablePosts),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              'Add Post to $projectName',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPostList(BuildContext context, List<PostModel> posts) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.6,
-      ),
-      child: ListView.builder(
-        shrinkWrap: true,
-        itemCount: posts.length,
-        itemBuilder: (context, index) => _buildPostItem(context, posts[index]),
-      ),
-    );
-  }
-
-  Widget _buildPostItem(BuildContext context, PostModel post) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ),
-        title: Text(
-          post.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              post.description,
-              style: TextStyle(color: Colors.white.withOpacity(0.7)),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () => _addPostToProject(context, post.id),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: availablePosts.length,
+                itemBuilder: (context, index) {
+                  final post = availablePosts[index];
+                  return ListTile(
+                    title: Text(
+                      post.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      post.description,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+                      onPressed: () {
+                        onPostSelected(post.id);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  );
+                },
               ),
-              child: const Text('Add to Project'),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _addPostToProject(BuildContext context, String postId) {
-    context.read<FeedBloc>().add(
-      FeedAddPostToProject(
-        projectId: projectId,
-        postId: postId,
-      ),
-    );
-    Navigator.pop(context);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Post added to $projectName'),
-        backgroundColor: Colors.green,
       ),
     );
   }

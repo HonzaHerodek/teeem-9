@@ -1,10 +1,16 @@
+// DEPRECATED: This file is no longer in use. 
+// The functionality has been moved to post_selection_sheet.dart which implements
+// the new UI with compact post cards and multi-selection capability.
+// Keeping this file for reference purposes only.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/models/post_model.dart';
 import '../../../presentation/screens/feed/feed_bloc/feed_bloc.dart';
 import '../../../presentation/screens/feed/feed_bloc/feed_event.dart';
+import 'selectable_compact_post_card.dart';
 
-class PostSelectionSheet extends StatelessWidget {
+class PostSelectionSheet extends StatefulWidget {
   final String projectId;
   final String projectName;
   final List<PostModel> availablePosts;
@@ -42,18 +48,48 @@ class PostSelectionSheet extends StatelessWidget {
     );
   }
 
-  void _addPostToProject(BuildContext context, String postId) {
-    context.read<FeedBloc>().add(
-      FeedAddPostToProject(
-        projectId: projectId,
-        postId: postId,
-      ),
-    );
+  @override
+  State<PostSelectionSheet> createState() => _PostSelectionSheetState();
+}
+
+class _PostSelectionSheetState extends State<PostSelectionSheet> {
+  final Set<String> _selectedPostIds = {};
+
+  void _togglePostSelection(String postId) {
+    setState(() {
+      if (_selectedPostIds.contains(postId)) {
+        _selectedPostIds.remove(postId);
+      } else {
+        _selectedPostIds.add(postId);
+      }
+    });
+  }
+
+  void _confirmSelection() {
+    if (_selectedPostIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one post'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    for (final postId in _selectedPostIds) {
+      context.read<FeedBloc>().add(
+        FeedAddPostToProject(
+          projectId: widget.projectId,
+          postId: postId,
+        ),
+      );
+    }
+
     Navigator.pop(context);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Post added to $projectName'),
+        content: Text('${_selectedPostIds.length} posts added to ${widget.projectName}'),
         backgroundColor: Colors.green,
       ),
     );
@@ -75,44 +111,44 @@ class PostSelectionSheet extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Add Post to $projectName',
+                  'Add Posts to ${widget.projectName}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+                      onPressed: _confirmSelection,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: availablePosts.length,
+            child: GridView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 1,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: widget.availablePosts.length,
               itemBuilder: (context, index) {
-                final post = availablePosts[index];
-                return ListTile(
-                  title: Text(
-                    post.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  subtitle: Text(
-                    post.description,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                    ),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                    onPressed: () => _addPostToProject(context, post.id),
-                  ),
+                final post = widget.availablePosts[index];
+                return SelectableCompactPostCard(
+                  post: post,
+                  isSelected: _selectedPostIds.contains(post.id),
+                  onToggle: () => _togglePostSelection(post.id),
                 );
               },
             ),

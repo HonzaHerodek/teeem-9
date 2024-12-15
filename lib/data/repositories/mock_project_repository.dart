@@ -11,7 +11,7 @@ class MockProjectRepository implements ProjectRepository {
       name: 'Photography Collection',
       description: 'A collection of my best photography work from 2023',
       creatorId: 'user1',
-      postIds: ['photo1', 'photo2', 'photo3'],
+      postIds: ['post_0', 'post_1', 'post_2'],  // Updated to match TestDataService IDs
       createdAt: DateTime.now().subtract(const Duration(days: 5)),
       updatedAt: DateTime.now(),
     ),
@@ -20,127 +20,9 @@ class MockProjectRepository implements ProjectRepository {
       name: 'Travel Adventures',
       description: 'Documenting my travels across Europe',
       creatorId: 'user1',
-      postIds: ['travel1', 'travel2'],
+      postIds: ['post_3', 'post_4'],  // Updated to match TestDataService IDs
       createdAt: DateTime.now().subtract(const Duration(days: 15)),
       updatedAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-  ];
-
-  final List<PostModel> _mockPosts = [
-    PostModel(
-      id: 'photo1',
-      userId: 'user1',
-      username: 'PhotoMaster',
-      userProfileImage: 'https://example.com/avatar1.jpg',
-      title: 'Sunset at Golden Gate',
-      description: 'Capturing the magical moment of sunset in San Francisco',
-      steps: [
-        PostStep(
-          id: 'step1',
-          type: StepType.image,
-          title: 'Golden Gate Sunset',
-          imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
-        )
-      ],
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 3)),
-      likes: [],
-      comments: [],
-      status: PostStatus.published,
-      ratings: [],
-      userTraits: [],
-    ),
-    PostModel(
-      id: 'photo2',
-      userId: 'user1',
-      username: 'PhotoMaster',
-      userProfileImage: 'https://example.com/avatar1.jpg',
-      title: 'Mountain Landscape',
-      description: 'Breathtaking view of the alpine mountains',
-      steps: [
-        PostStep(
-          id: 'step1',
-          type: StepType.image,
-          title: 'Alpine Peaks',
-          imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
-        )
-      ],
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 2)),
-      likes: [],
-      comments: [],
-      status: PostStatus.published,
-      ratings: [],
-      userTraits: [],
-    ),
-    PostModel(
-      id: 'photo3',
-      userId: 'user1',
-      username: 'PhotoMaster',
-      userProfileImage: 'https://example.com/avatar1.jpg',
-      title: 'City Lights',
-      description: 'Night photography of urban landscapes',
-      steps: [
-        PostStep(
-          id: 'step1',
-          type: StepType.image,
-          title: 'City at Night',
-          imageUrl: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
-        )
-      ],
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      likes: [],
-      comments: [],
-      status: PostStatus.published,
-      ratings: [],
-      userTraits: [],
-    ),
-    PostModel(
-      id: 'travel1',
-      userId: 'user1',
-      username: 'TravelBlogger',
-      userProfileImage: 'https://example.com/avatar1.jpg',
-      title: 'Paris Street Scene',
-      description: 'Exploring the charming streets of Paris',
-      steps: [
-        PostStep(
-          id: 'step1',
-          type: StepType.image,
-          title: 'Parisian Cafe',
-          imageUrl: 'https://images.unsplash.com/photo-1549144511-f099e773c147?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80',
-        )
-      ],
-      createdAt: DateTime.now().subtract(const Duration(days: 10)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 10)),
-      likes: [],
-      comments: [],
-      status: PostStatus.published,
-      ratings: [],
-      userTraits: [],
-    ),
-    PostModel(
-      id: 'travel2',
-      userId: 'user1',
-      username: 'TravelBlogger',
-      userProfileImage: 'https://example.com/avatar1.jpg',
-      title: 'Mediterranean Coast',
-      description: 'Scenic views of the Mediterranean coastline',
-      steps: [
-        PostStep(
-          id: 'step1',
-          type: StepType.image,
-          title: 'Coastal Landscape',
-          imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1473&q=80',
-        )
-      ],
-      createdAt: DateTime.now().subtract(const Duration(days: 8)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 8)),
-      likes: [],
-      comments: [],
-      status: PostStatus.published,
-      ratings: [],
-      userTraits: [],
     ),
   ];
 
@@ -224,12 +106,5 @@ class MockProjectRepository implements ProjectRepository {
       );
       await updateProject(updatedProject);
     }
-  }
-
-  // New method to get posts for a project
-  Future<List<PostModel>> getProjectPosts(String projectId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final project = await getProject(projectId);
-    return _mockPosts.where((post) => project.postIds.contains(post.id)).toList();
   }
 }

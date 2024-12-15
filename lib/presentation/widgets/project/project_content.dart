@@ -20,31 +20,35 @@ class ProjectContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            name,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 12.0),
+              Text(
+                description,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-          const SizedBox(height: 12.0),
-          Text(
-            description,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.8),
-                ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 20.0),
-          _buildContent(context),
-        ],
-      ),
+        ),
+        _buildContent(context),
+      ],
     );
   }
 
@@ -58,33 +62,44 @@ class ProjectContent extends StatelessWidget {
     }
 
     if (errorMessage.isNotEmpty) {
-      return Text(
-        errorMessage,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withOpacity(0.7),
-            ),
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Text(
+          errorMessage,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white.withOpacity(0.7),
+              ),
+        ),
       );
     }
 
     if (posts.isEmpty) {
-      return Text(
-        'No posts in this project',
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withOpacity(0.7),
-            ),
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Text(
+          'No posts in this project',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white.withOpacity(0.7),
+              ),
+        ),
       );
     }
 
+    final postSize = 140.0;
+    
     return SizedBox(
-      height: 120,
+      height: postSize,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: posts.length,
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.zero,
         itemBuilder: (context, index) {
           return CompactPostCard(
             post: posts[index],
-            width: 160,
-            height: 120,
+            width: postSize,
+            height: postSize,
+            circular: true,
           );
         },
       ),
