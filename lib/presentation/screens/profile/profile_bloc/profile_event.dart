@@ -66,3 +66,12 @@ class ProfileTraitAdded extends ProfileEvent {
   @override
   List<Object?> get props => [trait];
 }
+
+class ProfilePostUnsaved extends ProfileEvent {
+  final String postId;
+
+  const ProfilePostUnsaved(this.postId);
+
+  @override
+  List<Object?> get props => [postId];
+}

@@ -8,6 +8,8 @@ class CompactPostCard extends StatefulWidget {
   final double width;
   final double height;
   final bool circular;
+  final bool showHeartButton;
+  final VoidCallback? onUnsave;
 
   static const double _originalAvatarSize = 38.4;
   static const double _profileAvatarScale = 0.9;
@@ -21,6 +23,8 @@ class CompactPostCard extends StatefulWidget {
     this.width = 120,
     this.height = 120,
     this.circular = true,
+    this.showHeartButton = false,
+    this.onUnsave,
   });
 
   @override
@@ -72,6 +76,41 @@ class _CompactPostCardState extends State<CompactPostCard>
     } else if (_isExpanded && deltaY < -20) {
       _toggleExpanded();
     }
+  }
+
+  Widget _buildHeartButton() {
+    return GestureDetector(
+      onTap: widget.onUnsave,
+      child: ShaderMask(
+        shaderCallback: (Rect bounds) {
+          return LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.grey[300]!,
+              Colors.grey[400]!,
+              Colors.grey[500]!,
+            ],
+          ).createShader(bounds);
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.3),
+                blurRadius: 8,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.favorite,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildStepMiniature(PostStep step, int index) {
@@ -150,7 +189,8 @@ class _CompactPostCardState extends State<CompactPostCard>
                       rating: widget.post.ratingStats.averageRating,
                       size: 20,
                       color: Colors.amber,
-                      distribution: widget.post.ratingStats.ratingDistribution,
+                      isInteractive: false,
+                      distribution: null,
                       totalRatings: widget.post.ratings.length,
                       showRatingText: true,
                     ),
@@ -183,38 +223,54 @@ class _CompactPostCardState extends State<CompactPostCard>
   }
 
   Widget _buildCollapsedContent() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              widget.post.title,
-              textAlign: TextAlign.center,
-              maxLines: 2, // Changed from 1 to 2
-              overflow: TextOverflow.ellipsis,
-              softWrap: true, // Changed from false to true
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24 * CompactPostCard._titleScale,
-                fontWeight: FontWeight.bold,
-              ),
+    return Stack(
+      children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.post.title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24 * CompactPostCard._titleScale,
+                    fontWeight: FontWeight.bold,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.post.description,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16 * CompactPostCard._textScale,
+                    height: 1.2,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              widget.post.description,
-              textAlign: TextAlign.center,
-              maxLines: 2, // Changed from 3 to 2
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16 * CompactPostCard._textScale,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        if (widget.showHeartButton)
+          Positioned(
+            bottom: 8,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: _buildHeartButton(),
+            ),
+          ),
+      ],
     );
   }
 

@@ -5,16 +5,11 @@ import '../../../core/di/injection.dart';
 import '../../../domain/repositories/post_repository.dart';
 import '../../../domain/repositories/user_repository.dart';
 import '../../../core/services/rating_service.dart';
-import '../../../data/models/targeting_model.dart';
-import '../../../data/models/trait_model.dart';
 import '../../widgets/error_view.dart';
-import '../../widgets/loading_overlay.dart';
-import '../../widgets/post_card.dart';
 import '../../widgets/profile_posts_grid.dart';
-import '../../widgets/user_avatar.dart';
-import '../../widgets/rating_stars.dart';
-import '../../widgets/circular_action_button.dart';
-import '../../widgets/add_trait_dialog.dart';
+import 'widgets/profile_header_section.dart';
+import 'widgets/profile_traits_view.dart';
+import 'widgets/profile_network_view.dart';
 import 'profile_bloc/profile_bloc.dart';
 import 'profile_bloc/profile_event.dart';
 import 'profile_bloc/profile_state.dart';
@@ -69,160 +64,23 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _interestsController = TextEditingController();
-  final TextEditingController _minAgeController = TextEditingController();
-  final TextEditingController _maxAgeController = TextEditingController();
-  final TextEditingController _languagesController = TextEditingController();
-  final TextEditingController _skillsController = TextEditingController();
-  final TextEditingController _industriesController = TextEditingController();
-  String? _selectedExperienceLevel;
   bool _showTraits = false;
   bool _showNetwork = false;
   bool _isAddingTrait = false;
 
-  @override
-  void dispose() {
-    _interestsController.dispose();
-    _minAgeController.dispose();
-    _maxAgeController.dispose();
-    _languagesController.dispose();
-    _skillsController.dispose();
-    _industriesController.dispose();
-    super.dispose();
-  }
-
-  void _initializeControllers(TargetingCriteria? targeting) {
-    if (!mounted) return;
-    setState(() {
-      _interestsController.text = targeting?.interests?.join(', ') ?? '';
-      _minAgeController.text = targeting?.minAge?.toString() ?? '';
-      _maxAgeController.text = targeting?.maxAge?.toString() ?? '';
-      _languagesController.text = targeting?.languages?.join(', ') ?? '';
-      _skillsController.text = targeting?.skills?.join(', ') ?? '';
-      _industriesController.text = targeting?.industries?.join(', ') ?? '';
-      _selectedExperienceLevel = targeting?.experienceLevel;
-    });
-  }
-
-  List<String>? _parseCommaSeparatedList(String value) {
-    if (value.isEmpty) return null;
-    return value
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-  }
-
-  void _saveTargeting(BuildContext context) {
-    if (_formKey.currentState?.validate() ?? false) {
-      final targeting = TargetingCriteria(
-        interests: _parseCommaSeparatedList(_interestsController.text),
-        minAge: int.tryParse(_minAgeController.text),
-        maxAge: int.tryParse(_maxAgeController.text),
-        languages: _parseCommaSeparatedList(_languagesController.text),
-        skills: _parseCommaSeparatedList(_skillsController.text),
-        industries: _parseCommaSeparatedList(_industriesController.text),
-        experienceLevel: _selectedExperienceLevel,
-      );
-
-      context.read<ProfileBloc>().add(ProfileTargetingUpdated(targeting));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Content preferences updated')),
-      );
-    }
-  }
-
-  Widget _buildTraitBubbleFromModel(TraitModel trait) {
-    const double itemHeight = 40;
-    const double itemWidth = 120;
-
-    return Container(
-      width: itemWidth,
-      height: itemHeight,
-      margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(itemHeight / 2),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Container(
-            width: itemHeight,
-            height: itemHeight,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(itemHeight / 2),
-            ),
-            child: Center(
-              child: Icon(
-                IconData(int.parse(trait.iconData),
-                    fontFamily: 'MaterialIcons'),
-                color: Colors.white,
-                size: itemHeight * 0.6,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                trait.value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScrollableChipRow(List<TraitModel> traits) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const ClampingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          ...traits.map((trait) => _buildTraitBubbleFromModel(trait)),
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-            onPressed: () => _showAddTraitDialog(context),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddTraitDialog(BuildContext context) {
-    final profileBloc = context.read<ProfileBloc>();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AddTraitDialog(
+  Widget _buildContent(BuildContext context, ProfileState state) {
+    if (_showTraits) {
+      return ProfileTraitsView(
+        traits: state.user?.traits ?? [],
         onTraitAdded: (trait) async {
-          setState(() {
-            _isAddingTrait = true;
-          });
-
+          setState(() => _isAddingTrait = true);
           try {
-            profileBloc.add(ProfileTraitAdded(trait));
-            Navigator.pop(dialogContext);
+            context.read<ProfileBloc>().add(ProfileTraitAdded(trait));
+            Navigator.of(context).pop();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Added ${trait.name} trait'),
                 backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
               ),
             );
           } catch (e) {
@@ -230,84 +88,16 @@ class _ProfileViewState extends State<ProfileView> {
               SnackBar(
                 content: Text('Failed to add trait: $e'),
                 backgroundColor: Colors.red,
-                duration: const Duration(seconds: 2),
               ),
             );
           } finally {
-            setState(() {
-              _isAddingTrait = false;
-            });
+            setState(() => _isAddingTrait = false);
           }
         },
-      ),
-    );
-  }
-
-  Widget _buildChips(BuildContext context, ProfileState state) {
-    if (_showTraits) {
-      final user = state.user;
-      if (user == null) return const SizedBox.shrink();
-
-      final traitsByCategory = <String, List<TraitModel>>{};
-      for (var trait in user.traits) {
-        traitsByCategory.putIfAbsent(trait.category, () => []).add(trait);
-      }
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (var category in traitsByCategory.keys) ...[
-            Padding(
-              padding: const EdgeInsets.only(left: 16, bottom: 4),
-              child: Text(
-                category.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            _buildScrollableChipRow(traitsByCategory[category]!),
-            const SizedBox(height: 8),
-          ],
-          if (user.traits.isEmpty)
-            Center(
-              child: TextButton.icon(
-                onPressed: () => _showAddTraitDialog(context),
-                icon: const Icon(Icons.add, color: Colors.amber),
-                label: const Text(
-                  'Add your first trait',
-                  style: TextStyle(color: Colors.amber),
-                ),
-              ),
-            ),
-        ],
+        isLoading: _isAddingTrait,
       );
     } else if (_showNetwork) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildScrollableChipRow([
-            TraitModel(
-              id: '1',
-              name: 'Mentors',
-              iconData: '0xe559',
-              value: 'Mentors',
-              category: 'network',
-              displayOrder: 0,
-            ),
-            TraitModel(
-              id: '2',
-              name: 'Peers',
-              iconData: '0xe7ef',
-              value: 'Peers',
-              category: 'network',
-              displayOrder: 1,
-            ),
-          ]),
-        ],
-      );
+      return const ProfileNetworkView();
     } else {
       return Text(
         state.user?.username ?? '',
@@ -350,101 +140,60 @@ class _ProfileViewState extends State<ProfileView> {
           );
         }
 
-        final user = state.user!;
-
-        return Stack(
-          children: [
-            CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      if (state.ratingStats != null) ...[
-                        RatingStars(
-                          rating: state.ratingStats!.averageRating,
-                          size: 36,
-                          color: Colors.amber,
-                          distribution: state.ratingStats!.ratingDistribution,
-                          totalRatings: state.ratingStats!.totalRatings,
-                          showRatingText: true,
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularActionButton(
-                            icon: Icons.psychology,
-                            onPressed: () {
-                              setState(() {
-                                _showTraits = !_showTraits;
-                                _showNetwork = false;
-                              });
-                            },
-                          ),
-                          const SizedBox(width: 16),
-                          UserAvatar(
-                            imageUrl: user.profileImage,
-                            name: user.username,
-                            size: 100,
-                          ),
-                          const SizedBox(width: 16),
-                          CircularActionButton(
-                            icon: Icons.people,
-                            onPressed: () {
-                              setState(() {
-                                _showNetwork = !_showNetwork;
-                                _showTraits = false;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildChips(context, state),
-                      const SizedBox(height: 16),
-                      const Divider(color: Colors.white24),
-                      if (state.userPosts.isNotEmpty)
-                        ProfilePostsGrid(
-                          posts: state.userPosts,
-                          currentUserId: user.id,
-                          onLike: (post) {
-                            // TODO: Implement like functionality
-                          },
-                          onComment: (post) {
-                            // TODO: Implement comment functionality
-                          },
-                          onShare: (post) {
-                            // TODO: Implement share functionality
-                          },
-                          onRate: (rating, post) {
-                            context.read<ProfileBloc>().add(
-                                  ProfileRatingReceived(rating, user.id),
-                                );
-                          },
-                        ),
-                    ],
+        return CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  ProfileHeaderSection(
+                    state: state,
+                    onTraitsPressed: () {
+                      setState(() {
+                        _showTraits = !_showTraits;
+                        _showNetwork = false;
+                      });
+                    },
+                    onNetworkPressed: () {
+                      setState(() {
+                        _showNetwork = !_showNetwork;
+                        _showTraits = false;
+                      });
+                    },
+                    showTraits: _showTraits,
+                    showNetwork: _showNetwork,
                   ),
-                ),
-                if (state.userPosts.isEmpty)
-                  const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Text(
-                        'No posts yet',
-                        style: TextStyle(color: Colors.white70),
-                      ),
+                  _buildContent(context, state),
+                  const SizedBox(height: 16),
+                  const Divider(color: Colors.white24),
+                  if (state.userPosts.isNotEmpty)
+                    ProfilePostsGrid(
+                      posts: state.userPosts,
+                      currentUserId: state.user!.id,
+                      onLike: (post) {
+                        // TODO: Implement like functionality
+                      },
+                      onComment: (post) {
+                        // TODO: Implement comment functionality
+                      },
+                      onShare: (post) {
+                        // TODO: Implement share functionality
+                      },
+                      onRate: (rating, post) {
+                        context.read<ProfileBloc>().add(
+                              ProfileRatingReceived(rating, state.user!.id),
+                            );
+                      },
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-            if (_isAddingTrait)
-              Container(
-                color: Colors.black.withOpacity(0.5),
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+            if (state.userPosts.isEmpty)
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text(
+                    'No posts yet',
+                    style: TextStyle(color: Colors.white70),
                   ),
                 ),
               ),
