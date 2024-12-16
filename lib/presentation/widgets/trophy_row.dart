@@ -67,31 +67,49 @@ class _TrophyRowState extends State<TrophyRow> {
   }
 
   Widget _buildTrophyRow() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ...widget.trophies.take(8).map((trophy) {
-            final size = trophy.isAchieved ? 28.0 : 20.0;
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: _buildTrophyIcon(trophy, size: size),
-            );
-          }),
-          if (widget.trophies.length > 8)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Text(
-                '+${widget.trophies.length - 8}',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+    // Sort trophies to show achieved ones in the middle
+    final achievedTrophies = widget.trophies.where((t) => t.isAchieved).toList();
+    final unachievedTrophies = widget.trophies.where((t) => !t.isAchieved).toList();
+    
+    final displayTrophies = [
+      ...unachievedTrophies.take(3),
+      ...achievedTrophies,
+      ...unachievedTrophies.skip(3).take(2),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 300),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ...displayTrophies.take(8).map((trophy) {
+                  final size = trophy.isAchieved ? 28.0 : 20.0;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: _buildTrophyIcon(trophy, size: size),
+                  );
+                }),
+                if (widget.trophies.length > 8)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: Text(
+                      '+${widget.trophies.length - 8}',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
@@ -108,7 +126,7 @@ class _TrophyRowState extends State<TrophyRow> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final rowWidth = constraints.maxWidth - 32;
-        final cardWidth = (rowWidth / 2.2).floor().toDouble();
+        final cardWidth = (rowWidth / 2.5).floor().toDouble();
         final spacing = 8.0;
 
         return Container(
@@ -188,7 +206,7 @@ class _TrophyRowState extends State<TrophyRow> {
                     fontWeight: FontWeight.bold,
                   ),
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2, // Changed from 1 to 2
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),

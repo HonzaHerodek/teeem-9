@@ -27,11 +27,13 @@ class FeedActionButtons extends StatelessWidget {
             CircularActionButton(
               icon: Icons.person,
               onPressed: onProfileTap,
+              strokeWidth: 1.5,
             ),
             CircularActionButton(
               icon: isCreatingPost ? Icons.check : Icons.add,
               onPressed: onActionButtonTap,
               isBold: true,
+              strokeWidth: 4.0, // Increased from 3.0 to 4.0
             ),
           ],
         ),

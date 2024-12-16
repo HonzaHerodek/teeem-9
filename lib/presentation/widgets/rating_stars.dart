@@ -11,6 +11,13 @@ class RatingStars extends StatefulWidget {
   final int? totalRatings;
   final bool showRatingText;
   final Function(bool)? onExpanded;
+  final double? frameWidth;
+  final double? maxWidth;
+  final double? curveHeight;
+  final double? sizeModifier;
+  final double starSpacing;
+  final double curvature;
+  final int numberOfStars;
 
   const RatingStars({
     Key? key,
@@ -23,6 +30,13 @@ class RatingStars extends StatefulWidget {
     this.totalRatings,
     this.showRatingText = false,
     this.onExpanded,
+    this.curveHeight,
+    this.frameWidth,
+    this.maxWidth,
+    this.sizeModifier,
+    this.starSpacing = 3.6,
+    this.curvature = 0.3,
+    this.numberOfStars = 5,
   }) : super(key: key);
 
   @override
@@ -31,41 +45,73 @@ class RatingStars extends StatefulWidget {
 
 class _RatingStarsState extends State<RatingStars> {
   bool _expanded = false;
+  double? _dragRating;
 
-  Widget _buildCurvedStars() {
-    return SizedBox(
-      width: 160,
-      height: 50,
-      child: CustomPaint(
-        size: const Size(160, 50),
-        painter: CurvedStarsPainter(
-          rating: widget.rating,
-          starSize: widget.size,
-          color: widget.color ?? Colors.amber,
-        ),
-      ),
-    );
+  void _handleDragStart(DragStartDetails details) {
+    if (!widget.isInteractive) return;
+    _updateRatingFromPosition(details.localPosition);
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (!widget.isInteractive) return;
+    _updateRatingFromPosition(details.localPosition);
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    if (!widget.isInteractive) return;
+    widget.onRatingChanged?.call(_dragRating ?? widget.rating);
+    setState(() {
+      _dragRating = null;
+    });
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    if (!widget.isInteractive) return;
+    _updateRatingFromPosition(details.localPosition);
+    widget.onRatingChanged?.call(_dragRating ?? widget.rating);
+    setState(() {
+      _dragRating = null;
+    });
+  }
+
+  void _updateRatingFromPosition(Offset localPosition) {
+    final RenderBox box = context.findRenderObject() as RenderBox;
+    final double dx = localPosition.dx.clamp(0, box.size.width);
+    
+    // Calculate rating based on position
+    final rating = ((dx / box.size.width) * widget.numberOfStars).clamp(0, widget.numberOfStars.toDouble());
+    
+    // Support half-star ratings
+    final halfRating = (rating * 2).round() / 2;
+    
+    if (_dragRating != halfRating) {
+      setState(() {
+        _dragRating = halfRating;
+      });
+    }
   }
 
   Widget _buildRatingStats() {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (widget.showRatingText && widget.distribution != null && widget.totalRatings != null)
+        if (widget.showRatingText &&
+            widget.distribution != null &&
+            widget.totalRatings != null)
           Text(
             '${widget.rating.toStringAsFixed(1)} (${widget.totalRatings} ${widget.totalRatings == 1 ? 'rating' : 'ratings'})',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.amber,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: Colors.amber,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
         if (widget.distribution != null && widget.totalRatings != null) ...[
           const SizedBox(height: 16),
           Text(
             'Rating Distribution',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.white,
-            ),
+                  color: Colors.white,
+                ),
           ),
           const SizedBox(height: 8),
           for (var i = 5; i >= 1; i--)
@@ -83,10 +129,12 @@ class _RatingStarsState extends State<RatingStars> {
                     width: 150,
                     child: LinearProgressIndicator(
                       value: widget.totalRatings! > 0
-                          ? (widget.distribution![i] ?? 0) / widget.totalRatings!
+                          ? (widget.distribution![i] ?? 0) /
+                              widget.totalRatings!
                           : 0,
                       backgroundColor: Colors.grey[800],
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.amber),
+                      valueColor:
+                          const AlwaysStoppedAnimation<Color>(Colors.amber),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -108,79 +156,128 @@ class _RatingStarsState extends State<RatingStars> {
       mainAxisSize: MainAxisSize.min,
       children: [
         MouseRegion(
-          cursor: widget.distribution != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          cursor: widget.distribution != null || widget.isInteractive
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
           child: GestureDetector(
-            onTap: widget.distribution != null ? () {
-              setState(() {
-                _expanded = !_expanded;
-                widget.onExpanded?.call(_expanded);
-              });
-            } : null,
-            child: _buildCurvedStars(),
+            onTapDown: _handleTapDown,
+            onHorizontalDragStart: _handleDragStart,
+            onHorizontalDragUpdate: _handleDragUpdate,
+            onHorizontalDragEnd: _handleDragEnd,
+            onTap: widget.distribution != null && widget.onExpanded != null
+                ? () {
+                    setState(() {
+                      _expanded = !_expanded;
+                      widget.onExpanded?.call(_expanded);
+                    });
+                  }
+                : null,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final effectiveWidth = widget.frameWidth ?? 
+                                     widget.maxWidth ?? 
+                                     constraints.maxWidth;
+                
+                // Use either provided curveHeight or calculate from curvature
+                final effectiveCurveHeight = widget.curveHeight ?? 
+                                           (widget.size * widget.curvature);
+                
+                // Use either provided sizeModifier or starSizeIncrease
+                final effectiveStarSizeIncrease = widget.sizeModifier != null ? 
+                                                1 + widget.sizeModifier! : 
+                                                1.2;
+                
+                return Container(
+                  width: effectiveWidth,
+                  clipBehavior: Clip.none,
+                  child: CustomPaint(
+                    painter: StarsPainter(
+                      rating: _dragRating ?? widget.rating,
+                      starSize: widget.size,
+                      color: widget.color ?? Colors.amber,
+                      starSizeIncrease: effectiveStarSizeIncrease,
+                      starSpacing: widget.starSpacing,
+                      curvature: effectiveCurveHeight / widget.size,
+                      numberOfStars: widget.numberOfStars,
+                    ),
+                    size: Size(
+                      effectiveWidth,
+                      widget.size * effectiveStarSizeIncrease * (1 + widget.curvature),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ),
-        AnimatedCrossFade(
-          firstChild: const SizedBox.shrink(),
-          secondChild: Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: _buildRatingStats(),
+        if (widget.distribution != null)
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: _buildRatingStats(),
+            ),
+            crossFadeState:
+                _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 300),
           ),
-          crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 300),
-        ),
       ],
     );
   }
 }
 
-class CurvedStarsPainter extends CustomPainter {
+class StarsPainter extends CustomPainter {
   final double rating;
   final double starSize;
   final Color color;
+  final double starSizeIncrease;
+  final double starSpacing;
+  final double curvature;
+  final int numberOfStars;
 
-  CurvedStarsPainter({
+  StarsPainter({
     required this.rating,
     required this.starSize,
     required this.color,
+    required this.starSizeIncrease,
+    required this.starSpacing,
+    required this.curvature,
+    required this.numberOfStars,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color
-      ..style = PaintingStyle.fill;
+      ..style = PaintingStyle.fill
+      ..strokeWidth = 2.0;
 
-    // Calculate positions for stars along a very gentle curve
-    final starSpacing = size.width / 3.6; // Adjusted spacing for larger stars
-    final curveHeight = 43.0;
-    
-    // Calculate the middle star's position first
-    final middleX = size.width / 2;
-    final middleY = size.height - starSize / 2;
-    
-    for (int i = 0; i < 5; i++) {
-      // Calculate x position with increased spacing
-      final progress = i / 4;
-      final x = (size.width - starSpacing * 4) / 2 + starSpacing * i;
+    final baseSpacing = size.width / (numberOfStars * starSpacing);
+    final totalStarsWidth = starSize * numberOfStars * starSizeIncrease;
+    final totalSpacingWidth = baseSpacing * (numberOfStars - 1);
+    final startX = (size.width - (totalStarsWidth + totalSpacingWidth)) / 2;
+
+    for (int i = 0; i < numberOfStars; i++) {
+      final progress = i / (numberOfStars - 1);
+      final x = startX + (starSize * starSizeIncrease + baseSpacing) * i;
       
-      // Calculate y position using a parabolic curve
-      final normalizedX = progress * 2 - 1; // -1 to 1
-      final y = middleY - curveHeight * (1 - normalizedX * normalizedX);
+      // Calculate y position based on quadratic curve
+      final normalizedX = progress * 2 - 1;
+      final curveOffset = size.height * curvature * (1 - normalizedX * normalizedX);
+      final y = (size.height - starSize) / 2 - curveOffset;
+
+      // Calculate current star's size based on position
+      final currentSize = starSize * (1 + (starSizeIncrease - 1) * (1 - normalizedX * normalizedX));
       
-      // Calculate gradually increasing size (8% increase per star)
-      final sizeMultiplier = 1.0 + (i * 0.08);
-      final currentStarSize = starSize * sizeMultiplier;
-      
+      final center = Offset(x + currentSize / 2, y + currentSize / 2);
       final starValue = i + 1;
-      final isHalfStar = rating > i && rating < starValue;
-      final isFullStar = rating >= starValue;
-
-      if (isFullStar) {
-        _drawStar(canvas, Offset(x, y), currentStarSize, paint);
-      } else if (isHalfStar) {
-        _drawHalfStar(canvas, Offset(x, y), currentStarSize, paint);
+      
+      if (rating >= starValue) {
+        _drawStar(canvas, center, currentSize, paint..style = PaintingStyle.fill);
+      } else if (rating > i) {
+        _drawHalfStar(canvas, center, currentSize, paint);
       } else {
-        _drawStarBorder(canvas, Offset(x, y), currentStarSize, paint);
+        _drawStar(canvas, center, currentSize, paint..style = PaintingStyle.stroke);
       }
     }
   }
@@ -192,40 +289,43 @@ class CurvedStarsPainter extends CustomPainter {
 
   void _drawHalfStar(Canvas canvas, Offset center, double size, Paint paint) {
     final path = _createStarPath(center, size);
-    canvas.drawPath(path, paint..style = PaintingStyle.stroke..strokeWidth = 2);
-
+    
+    // Draw outline
+    canvas.drawPath(path, paint..style = PaintingStyle.stroke);
+    
+    // Create and draw half-filled star
     final halfPath = Path();
     final rect = Rect.fromCenter(center: center, width: size, height: size);
     halfPath.addRect(Rect.fromLTRB(rect.left, rect.top, center.dx, rect.bottom));
-    canvas.drawPath(Path.combine(PathOperation.intersect, path, halfPath),
-        paint..style = PaintingStyle.fill);
-  }
-
-  void _drawStarBorder(Canvas canvas, Offset center, double size, Paint paint) {
-    final path = _createStarPath(center, size);
-    canvas.drawPath(path, paint..style = PaintingStyle.stroke..strokeWidth = 2);
+    
+    canvas.drawPath(
+      Path.combine(PathOperation.intersect, path, halfPath),
+      paint..style = PaintingStyle.fill,
+    );
   }
 
   Path _createStarPath(Offset center, double size) {
     final path = Path();
     final halfSize = size / 2;
+    final outerRadius = halfSize;
+    final innerRadius = halfSize * 0.4;
 
     for (int i = 0; i < 5; i++) {
       final angle = -math.pi / 2 + i * math.pi * 2 / 5;
-      final point = Offset(
-        center.dx + math.cos(angle) * halfSize,
-        center.dy + math.sin(angle) * halfSize,
+      final outerPoint = Offset(
+        center.dx + math.cos(angle) * outerRadius,
+        center.dy + math.sin(angle) * outerRadius,
       );
       final innerAngle = angle + math.pi / 5;
       final innerPoint = Offset(
-        center.dx + math.cos(innerAngle) * (halfSize * 0.4),
-        center.dy + math.sin(innerAngle) * (halfSize * 0.4),
+        center.dx + math.cos(innerAngle) * innerRadius,
+        center.dy + math.sin(innerAngle) * innerRadius,
       );
 
       if (i == 0) {
-        path.moveTo(point.dx, point.dy);
+        path.moveTo(outerPoint.dx, outerPoint.dy);
       } else {
-        path.lineTo(point.dx, point.dy);
+        path.lineTo(outerPoint.dx, outerPoint.dy);
       }
       path.lineTo(innerPoint.dx, innerPoint.dy);
     }
@@ -234,9 +334,13 @@ class CurvedStarsPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CurvedStarsPainter oldDelegate) {
+  bool shouldRepaint(StarsPainter oldDelegate) {
     return oldDelegate.rating != rating ||
         oldDelegate.starSize != starSize ||
-        oldDelegate.color != color;
+        oldDelegate.color != color ||
+        oldDelegate.starSizeIncrease != starSizeIncrease ||
+        oldDelegate.starSpacing != starSpacing ||
+        oldDelegate.curvature != curvature ||
+        oldDelegate.numberOfStars != numberOfStars;
   }
 }

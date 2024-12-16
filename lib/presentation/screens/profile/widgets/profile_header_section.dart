@@ -36,6 +36,11 @@ class _ProfileHeaderSectionState extends State<ProfileHeaderSection> {
     if (user == null) return const SizedBox.shrink();
 
     const profileSize = 130.0;
+    // Calculate sliding panel width (75% of screen width)
+    final screenWidth = MediaQuery.of(context).size.width;
+    final slidingPanelWidth = screenWidth * 0.75;
+    // Stars should be 80% of sliding panel width
+    final starsWidth = slidingPanelWidth * 0.8;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -49,15 +54,24 @@ class _ProfileHeaderSectionState extends State<ProfileHeaderSection> {
           ),
           if (_trophiesExpanded) const SizedBox(height: 16),
           if (!_trophiesExpanded)
-            const SizedBox(height: 32), // Spacing between trophies and stars
-          RatingStars(
-            rating: widget.state.ratingStats!.averageRating,
-            size: 36,
-            color: Colors.amber,
-            distribution: widget.state.ratingStats!.ratingDistribution,
-            totalRatings: widget.state.ratingStats!.totalRatings,
-            showRatingText: true,
-            onExpanded: (expanded) => setState(() => _statsExpanded = expanded),
+            const SizedBox(height: 48),
+          Center(
+            child: SizedBox(
+              width: starsWidth,
+              child: RatingStars(
+                rating: widget.state.ratingStats!.averageRating,
+                size: 36,
+                color: Colors.amber,
+                frameWidth: starsWidth,
+                sizeModifier: 0.2, // Maps to 1.2 size increase
+                starSpacing: 3.6,
+                curvature: 0.3,
+                distribution: widget.state.ratingStats!.ratingDistribution,
+                totalRatings: widget.state.ratingStats!.totalRatings,
+                showRatingText: true,
+                onExpanded: (expanded) => setState(() => _statsExpanded = expanded),
+              ),
+            ),
           ),
           if (_statsExpanded || _trophiesExpanded) const SizedBox(height: 16),
         ],

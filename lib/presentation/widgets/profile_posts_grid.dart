@@ -17,37 +17,38 @@ class PostRowHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+    return SizedBox(
+      width: double.infinity,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Text(
+              title.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.w100,
+                letterSpacing: 1.2,
+                height: 1.2,
+              ),
+            ),
+          ),
           if (backgroundIcon != null)
             Positioned(
-              left: screenWidth / 2 - 45,
-              top: -10,
-              child: Container(
-                width: 90,
-                height: 90,
+              left: 24 + title.length * 20 + 8,
+              top: 24, // Aligned with text top padding
+              child: SizedBox(
+                width: 72,
+                height: 72,
                 child: Icon(
                   backgroundIcon!,
-                  size: 80,
+                  size: 72,
                   color: Colors.white.withOpacity(0.08),
                 ),
               ),
             ),
-          Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.w100,
-              letterSpacing: 1.2,
-              height: 1.2,
-            ),
-          ),
         ],
       ),
     );
@@ -93,20 +94,23 @@ class ProfilePostsGrid extends StatelessWidget {
           height: rowHeight,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             physics: const BouncingScrollPhysics(),
             itemCount: posts.length,
             itemBuilder: (context, index) {
               final post = posts[index];
-              return CompactPostCard(
-                post: post,
-                width: postSize,
-                height: postSize,
-                circular: true,
-                showHeartButton: showHeartButton,
-                onUnsave: showHeartButton ? () {
-                  context.read<ProfileBloc>().add(ProfilePostUnsaved(post.id));
-                } : null,
+              return Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: CompactPostCard(
+                  post: post,
+                  width: postSize,
+                  height: postSize,
+                  circular: true,
+                  showHeartButton: showHeartButton,
+                  onUnsave: showHeartButton ? () {
+                    context.read<ProfileBloc>().add(ProfilePostUnsaved(post.id));
+                  } : null,
+                ),
               );
             },
           ),

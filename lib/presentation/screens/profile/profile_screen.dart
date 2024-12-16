@@ -98,15 +98,9 @@ class _ProfileViewState extends State<ProfileView> {
       );
     } else if (_showNetwork) {
       return const ProfileNetworkView();
-    } else {
-      return Text(
-        state.user?.username ?? '',
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-      );
     }
+    
+    return const SizedBox.shrink(); // Return empty widget instead of username text
   }
 
   @override
@@ -163,7 +157,17 @@ class _ProfileViewState extends State<ProfileView> {
                     showNetwork: _showNetwork,
                   ),
                   _buildContent(context, state),
-                  const SizedBox(height: 16),
+                  if (_showTraits || _showNetwork) const SizedBox(height: 16),
+                  if (!_showTraits && !_showNetwork) ...[
+                    Text(
+                      state.user?.username ?? '',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   const Divider(color: Colors.white24),
                   if (state.userPosts.isNotEmpty)
                     ProfilePostsGrid(
