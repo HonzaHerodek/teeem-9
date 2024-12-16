@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'package:injectable/injectable.dart';
 import '../../core/errors/app_exception.dart';
 import '../../domain/repositories/user_repository.dart';
 import '../models/user_model.dart';
 import '../models/targeting_model.dart';
 import '../models/rating_model.dart';
-import '../models/trait_model.dart';
+import '../models/trophy_model.dart';
+import 'package:flutter/material.dart';
 
+@LazySingleton(as: UserRepository)
 class MockUserRepository implements UserRepository {
   final Map<String, UserModel> _users = {};
   final _delay = const Duration(milliseconds: 500); // Simulate network delay
@@ -312,5 +315,15 @@ class MockUserRepository implements UserRepository {
         'engagementGrowth': 15,
       },
     };
+  }
+
+  @override
+  Future<List<Trophy>> getTrophies() async {
+    await Future.delayed(_delay);
+    try {
+      return defaultTrophies;
+    } catch (e) {
+      throw AppException('Failed to fetch trophies');
+    }
   }
 }
