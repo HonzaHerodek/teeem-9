@@ -36,13 +36,7 @@ mixin ProjectActionsMixin on Bloc<FeedEvent, FeedState> {
 
     final currentState = state as FeedSuccess;
     try {
-      final project = await projectRepository.getProject(projectId);
-      final updatedProject = project.copyWith(
-        postIds: [...project.postIds, postId],
-        updatedAt: DateTime.now(),
-      );
-
-      await projectRepository.updateProject(updatedProject);
+      await projectRepository.addPostToProject(projectId, postId);
       final updatedProjects = await projectRepository.getProjects();
 
       emit(FeedSuccess(
@@ -66,13 +60,105 @@ mixin ProjectActionsMixin on Bloc<FeedEvent, FeedState> {
 
     final currentState = state as FeedSuccess;
     try {
-      final project = await projectRepository.getProject(projectId);
-      final updatedProject = project.copyWith(
-        postIds: project.postIds.where((id) => id != postId).toList(),
-        updatedAt: DateTime.now(),
-      );
+      await projectRepository.removePostFromProject(projectId, postId);
+      final updatedProjects = await projectRepository.getProjects();
 
-      await projectRepository.updateProject(updatedProject);
+      emit(FeedSuccess(
+        posts: currentState.posts,
+        projects: updatedProjects,
+        currentUserId: currentState.currentUserId,
+        selectedProjectId: currentState.selectedProjectId,
+      ));
+    } catch (e) {
+      emit(FeedFailure(error: e.toString()));
+    }
+  }
+
+  Future<void> handleBatchAddPostsToProject(
+    String projectId,
+    List<String> postIds,
+    ProjectRepository projectRepository,
+    Emitter<FeedState> emit,
+  ) async {
+    if (state is! FeedSuccess) return;
+
+    final currentState = state as FeedSuccess;
+    try {
+      // Get current project state
+      final project = await projectRepository.getProject(projectId);
+      
+      // Add the new posts
+      await projectRepository.batchAddPostsToProject(projectId, postIds);
+      
+      // Get updated projects
+      final updatedProjects = await projectRepository.getProjects();
+
+      emit(FeedSuccess(
+        posts: currentState.posts,
+        projects: updatedProjects,
+        currentUserId: currentState.currentUserId,
+        selectedProjectId: currentState.selectedProjectId,
+      ));
+    } catch (e) {
+      emit(FeedFailure(error: e.toString()));
+    }
+  }
+
+  Future<void> handleBatchRemovePostsFromProject(
+    String projectId,
+    List<String> postIds,
+    ProjectRepository projectRepository,
+    Emitter<FeedState> emit,
+  ) async {
+    if (state is! FeedSuccess) return;
+
+    final currentState = state as FeedSuccess;
+    try {
+      // Get current project state
+      final project = await projectRepository.getProject(projectId);
+      
+      // Remove the posts
+      await projectRepository.batchRemovePostsFromProject(projectId, postIds);
+      
+      // Get updated projects
+      final updatedProjects = await projectRepository.getProjects();
+
+      emit(FeedSuccess(
+        posts: currentState.posts,
+        projects: updatedProjects,
+        currentUserId: currentState.currentUserId,
+        selectedProjectId: currentState.selectedProjectId,
+      ));
+    } catch (e) {
+      emit(FeedFailure(error: e.toString()));
+    }
+  }
+
+  Future<void> handleBatchOperations(
+    String projectId,
+    List<String> postsToRemove,
+    List<String> postsToAdd,
+    ProjectRepository projectRepository,
+    Emitter<FeedState> emit,
+  ) async {
+    if (state is! FeedSuccess) return;
+
+    final currentState = state as FeedSuccess;
+    try {
+      // Get current project state
+      final project = await projectRepository.getProject(projectId);
+      
+      // First remove posts
+      if (postsToRemove.isNotEmpty) {
+        await projectRepository.batchRemovePostsFromProject(projectId, postsToRemove);
+      }
+      
+      // Then add posts
+      if (postsToAdd.isNotEmpty) {
+        await projectRepository.batchAddPostsToProject(projectId, postsToAdd);
+      }
+      
+      // Get final updated state
       final updatedProjects = await projectRepository.getProjects();
 
       emit(FeedSuccess(

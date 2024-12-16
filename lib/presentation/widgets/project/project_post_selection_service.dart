@@ -4,7 +4,6 @@ import '../../../data/models/post_model.dart';
 import '../../../domain/repositories/post_repository.dart';
 import '../../screens/feed/feed_bloc/feed_bloc.dart';
 import '../../screens/feed/feed_bloc/feed_event.dart';
-import '../../screens/feed/feed_bloc/feed_state.dart';
 
 class ProjectPostSelectionService extends ChangeNotifier {
   final PostRepository _postRepository;
@@ -50,9 +49,10 @@ class ProjectPostSelectionService extends ChangeNotifier {
 
     try {
       final posts = await Future.wait(
-        _currentPostIds.map((id) => _postRepository.getPostById(id).catchError((e) {
+        _currentPostIds.map((id) => _postRepository.getPostById(id).catchError((Object e) {
           print('Error fetching post $id: $e');
-          return null;
+          // Skip posts that fail to load by filtering them out later
+          return Future<PostModel?>.value(null);
         })),
       );
 
@@ -106,43 +106,42 @@ class ProjectPostSelectionService extends ChangeNotifier {
       return;
     }
 
+    // Get the IDs of all project posts
+    final projectPostIds = _projectPosts.map((p) => p.id).toSet();
+
     // Handle removing selected project posts
-    final selectedProjectPosts = _selectedPostIds.where(
-      (id) => _currentPostIds.contains(id)
-    );
-    
-    for (final postId in selectedProjectPosts) {
-      context.read<FeedBloc>().add(
-        FeedRemovePostFromProject(
-          projectId: projectId,
-          postId: postId,
-        ),
-      );
-    }
+    final selectedProjectPosts = _selectedPostIds
+        .where((id) => projectPostIds.contains(id))
+        .toList();
 
     // Handle adding selected available posts
-    final selectedAvailablePosts = _selectedPostIds.where(
-      (id) => !_currentPostIds.contains(id)
-    );
+    final selectedAvailablePosts = _selectedPostIds
+        .where((id) => !projectPostIds.contains(id))
+        .toList();
 
-    for (final postId in selectedAvailablePosts) {
+    // Send a single batch operation event
+    if (selectedProjectPosts.isNotEmpty || selectedAvailablePosts.isNotEmpty) {
       context.read<FeedBloc>().add(
-        FeedAddPostToProject(
+        FeedBatchOperations(
           projectId: projectId,
-          postId: postId,
+          postsToRemove: selectedProjectPosts,
+          postsToAdd: selectedAvailablePosts,
         ),
       );
-    }
 
-    // Trigger a feed refresh to ensure we have the latest data
-    context.read<FeedBloc>().add(const FeedRefreshed());
+      // Update local state
+      _currentPostIds = _currentPostIds
+          .where((id) => !selectedProjectPosts.contains(id))
+          .toList()
+        ..addAll(selectedAvailablePosts);
+    }
 
     final addedCount = selectedAvailablePosts.length;
     final removedCount = selectedProjectPosts.length;
     
     String message = '';
     if (addedCount > 0 && removedCount > 0) {
-      message = '$addedCount posts added and $removedCount posts removed from $projectName';
+      message = '$removedCount posts removed and $addedCount posts added to $projectName';
     } else if (addedCount > 0) {
       message = '$addedCount posts added to $projectName';
     } else {

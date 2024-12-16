@@ -90,6 +90,18 @@ class FeedBloc extends Bloc<FeedEvent, FeedState>
       handleAddPostToProject(event.projectId, event.postId, _projectRepository, emit));
     on<FeedRemovePostFromProject>((event, emit) => 
       handleRemovePostFromProject(event.projectId, event.postId, _projectRepository, emit));
+    on<FeedBatchAddPostsToProject>((event, emit) =>
+      handleBatchAddPostsToProject(event.projectId, event.postIds, _projectRepository, emit));
+    on<FeedBatchRemovePostsFromProject>((event, emit) =>
+      handleBatchRemovePostsFromProject(event.projectId, event.postIds, _projectRepository, emit));
+    on<FeedBatchOperations>((event, emit) =>
+      handleBatchOperations(
+        event.projectId,
+        event.postsToRemove,
+        event.postsToAdd,
+        _projectRepository,
+        emit,
+      ));
     
     // Filtering
     on<FeedFilterChanged>(_onFilterChanged);

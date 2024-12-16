@@ -76,14 +76,13 @@ class _PostSelectionSheetState extends State<PostSelectionSheet> {
       return;
     }
 
-    for (final postId in _selectedPostIds) {
-      context.read<FeedBloc>().add(
-            FeedAddPostToProject(
-              projectId: widget.projectId,
-              postId: postId,
-            ),
-          );
-    }
+    // Use batch operation instead of individual operations
+    context.read<FeedBloc>().add(
+          FeedBatchAddPostsToProject(
+            projectId: widget.projectId,
+            postIds: _selectedPostIds.toList(),
+          ),
+        );
 
     Navigator.pop(context);
 

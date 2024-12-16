@@ -1,8 +1,5 @@
 import '../../domain/repositories/project_repository.dart';
 import '../models/project_model.dart';
-import '../models/post_model.dart';
-import '../models/rating_model.dart';
-import '../models/trait_model.dart';
 
 class MockProjectRepository implements ProjectRepository {
   final List<ProjectModel> _projects = [
@@ -106,5 +103,29 @@ class MockProjectRepository implements ProjectRepository {
       );
       await updateProject(updatedProject);
     }
+  }
+
+  @override
+  Future<void> batchAddPostsToProject(String projectId, List<String> postIds) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    final project = await getProject(projectId);
+    final updatedPostIds = {...project.postIds, ...postIds}.toList();
+    final updatedProject = project.copyWith(
+      postIds: updatedPostIds,
+      updatedAt: DateTime.now(),
+    );
+    await updateProject(updatedProject);
+  }
+
+  @override
+  Future<void> batchRemovePostsFromProject(String projectId, List<String> postIds) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    final project = await getProject(projectId);
+    final updatedPostIds = project.postIds.where((id) => !postIds.contains(id)).toList();
+    final updatedProject = project.copyWith(
+      postIds: updatedPostIds,
+      updatedAt: DateTime.now(),
+    );
+    await updateProject(updatedProject);
   }
 }

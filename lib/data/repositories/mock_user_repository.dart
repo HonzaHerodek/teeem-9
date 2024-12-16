@@ -6,7 +6,7 @@ import '../models/user_model.dart';
 import '../models/targeting_model.dart';
 import '../models/rating_model.dart';
 import '../models/trophy_model.dart';
-import 'package:flutter/material.dart';
+import '../models/trait_model.dart';
 
 @LazySingleton(as: UserRepository)
 class MockUserRepository implements UserRepository {
@@ -40,7 +40,7 @@ class MockUserRepository implements UserRepository {
 
     // Create some test traits
     final testTraits = [
-      TraitModel(
+      const TraitModel(
         id: 'prog_exp',
         name: 'Experience',
         iconData: '0xe8e8',
@@ -48,7 +48,7 @@ class MockUserRepository implements UserRepository {
         category: 'programming',
         displayOrder: 0,
       ),
-      TraitModel(
+      const TraitModel(
         id: 'prog_lang',
         name: 'Languages',
         iconData: '0xe86f',

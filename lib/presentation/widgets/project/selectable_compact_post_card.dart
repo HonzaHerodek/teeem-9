@@ -46,13 +46,30 @@ class SelectableCompactPostCard extends StatelessWidget {
                 ),
               ),
               child: isSelected
-                  ? Center(
-                      child: Icon(
-                        isProjectPost 
-                            ? Icons.close_rounded  // Cross symbol for project posts
-                            : Icons.check_rounded, // Check symbol for available posts
-                        color: borderColor,
-                        size: 40,
+                  ? Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withOpacity(0.2),
+                      ),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: borderColor.withOpacity(0.6),
+                            border: Border.all(
+                              color: borderColor,
+                              width: 2,
+                            ),
+                          ),
+                          child: Icon(
+                            isProjectPost 
+                                ? Icons.close_rounded  // Cross symbol for project posts
+                                : Icons.check_rounded, // Check symbol for available posts
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                        ),
                       ),
                     )
                   : null,

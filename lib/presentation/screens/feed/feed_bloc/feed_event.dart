@@ -169,6 +169,47 @@ class FeedRemovePostFromProject extends FeedEvent {
   List<Object?> get props => [projectId, postId];
 }
 
+class FeedBatchAddPostsToProject extends FeedEvent {
+  final String projectId;
+  final List<String> postIds;
+
+  const FeedBatchAddPostsToProject({
+    required this.projectId,
+    required this.postIds,
+  });
+
+  @override
+  List<Object?> get props => [projectId, postIds];
+}
+
+class FeedBatchRemovePostsFromProject extends FeedEvent {
+  final String projectId;
+  final List<String> postIds;
+
+  const FeedBatchRemovePostsFromProject({
+    required this.projectId,
+    required this.postIds,
+  });
+
+  @override
+  List<Object?> get props => [projectId, postIds];
+}
+
+class FeedBatchOperations extends FeedEvent {
+  final String projectId;
+  final List<String> postsToRemove;
+  final List<String> postsToAdd;
+
+  const FeedBatchOperations({
+    required this.projectId,
+    required this.postsToRemove,
+    required this.postsToAdd,
+  });
+
+  @override
+  List<Object?> get props => [projectId, postsToRemove, postsToAdd];
+}
+
 class FeedProjectLiked extends FeedEvent {
   final String projectId;
 
