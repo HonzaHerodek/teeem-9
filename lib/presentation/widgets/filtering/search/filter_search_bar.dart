@@ -19,51 +19,48 @@ class FilterSearchBar extends StatefulWidget {
 
 class _FilterSearchBarState extends State<FilterSearchBar> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.requestFocus();
+  }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      height: 40,
       decoration: BoxDecoration(
-        color: Colors.black45,
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.white24),
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              autofocus: true, // Automatically focus when shown
-              decoration: InputDecoration(
-                hintText: widget.filterType.searchPlaceholder,
-                hintStyle: const TextStyle(color: Colors.white70),
-                border: InputBorder.none,
-                prefixIcon: const Icon(Icons.search, color: Colors.white),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              ),
-              style: const TextStyle(color: Colors.white),
-              cursorColor: Colors.white,
-              onChanged: widget.onSearch,
-            ),
-          ),
-          IconButton(
+      child: TextField(
+        controller: _controller,
+        focusNode: _focusNode,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: widget.filterType.searchPlaceholder,
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+          prefixIcon: Icon(widget.filterType.icon, color: Colors.white),
+          suffixIcon: IconButton(
             icon: const Icon(Icons.close, color: Colors.white),
             onPressed: () {
               _controller.clear();
               widget.onClose();
             },
-            padding: const EdgeInsets.all(4),
-            constraints: const BoxConstraints(),
-            iconSize: 20,
           ),
-        ],
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+        onChanged: widget.onSearch,
       ),
     );
   }
