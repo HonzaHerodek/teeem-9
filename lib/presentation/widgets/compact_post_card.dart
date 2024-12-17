@@ -45,12 +45,7 @@ class _CompactPostCardState extends State<CompactPostCard>
 
   void _handleExpand(bool expanded) {
     setState(() {
-      isExpanded = expanded;
-      if (expanded) {
-        controller.forward();
-      } else {
-        controller.reverse();
-      }
+      updateExpandedState(expanded);
     });
   }
 
@@ -65,12 +60,16 @@ class _CompactPostCardState extends State<CompactPostCard>
         shape: BoxShape.circle,
         clipBehavior: Clip.none,
         child: GestureDetector(
+          onTap: () => _handleExpand(!isExpanded), // Add tap to expand
           onVerticalDragStart: handleVerticalDragStart,
           onVerticalDragUpdate: (details) => handleVerticalDragUpdate(
             details,
             onExpand: () => _handleExpand(true),
             onCollapse: () => _handleExpand(false),
           ),
+          onVerticalDragEnd: handleVerticalDragEnd,
+          onVerticalDragCancel: handleVerticalDragCancel,
+          behavior: HitTestBehavior.opaque, // Changed from translucent to opaque
           child: Container(
             width: widget.width,
             height: widget.height,
@@ -80,6 +79,7 @@ class _CompactPostCardState extends State<CompactPostCard>
             ),
             child: ClipOval(
               child: Stack(
+                fit: StackFit.expand,
                 children: [
                   AnimatedProfilePicture(
                     imageUrl: widget.post.userProfileImage,
@@ -91,19 +91,49 @@ class _CompactPostCardState extends State<CompactPostCard>
                     onTap: () => _handleExpand(!isExpanded),
                     showFullScreenWhenExpanded: false,
                   ),
-                  ExpandablePostContent(
-                    isExpanded: isExpanded,
+                  AnimatedBuilder(
                     animation: controller,
-                    scrollController: _scrollController,
-                    post: widget.post,
-                    title: widget.post.title,
-                    description: widget.post.description,
-                    rating: widget.post.ratingStats.averageRating,
-                    totalRatings: widget.post.ratings.length,
-                    steps: widget.post.steps,
-                    showHeartButton: widget.showHeartButton,
-                    onUnsave: widget.onUnsave,
-                    width: widget.width,
+                    builder: (context, child) {
+                      return Stack(
+                        children: [
+                          // Non-expanded content (title, description)
+                          Opacity(
+                            opacity: 1.0 - controller.value,
+                            child: ExpandablePostContent(
+                              isExpanded: false,
+                              animation: controller,
+                              scrollController: _scrollController,
+                              title: widget.post.title,
+                              description: widget.post.description,
+                              rating: widget.post.ratingStats.averageRating,
+                              totalRatings: widget.post.ratings.length,
+                              steps: widget.post.steps,
+                              showHeartButton: widget.showHeartButton,
+                              onUnsave: widget.onUnsave,
+                              width: widget.width,
+                            ),
+                          ),
+                          // Expanded content
+                          Opacity(
+                            opacity: controller.value,
+                            child: ExpandablePostContent(
+                              isExpanded: true,
+                              animation: controller,
+                              scrollController: _scrollController,
+                              post: widget.post,
+                              title: widget.post.title,
+                              description: widget.post.description,
+                              rating: widget.post.ratingStats.averageRating,
+                              totalRatings: widget.post.ratings.length,
+                              steps: widget.post.steps,
+                              showHeartButton: widget.showHeartButton,
+                              onUnsave: widget.onUnsave,
+                              width: widget.width,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

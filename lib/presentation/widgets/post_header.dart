@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show lerpDouble;
 import '../../data/models/post_model.dart';
 import '../../data/models/trait_model.dart';
 import '../../domain/repositories/post_repository.dart';
@@ -72,11 +73,9 @@ class _PostHeaderState extends State<PostHeader>
   void didUpdateWidget(PostHeader oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isExpanded != widget.isExpanded) {
+      updateExpandedState(widget.isExpanded);
       if (widget.isExpanded) {
-        controller.forward();
         _fetchOtherPosts();
-      } else {
-        controller.reverse();
       }
     }
   }
@@ -118,14 +117,13 @@ class _PostHeaderState extends State<PostHeader>
 
   Widget _buildHeaderContent() {
     final screenWidth = MediaQuery.of(context).size.width;
-    final starsWidth = screenWidth * 0.6; // 60% of screen width
+    final starsWidth = screenWidth * 0.6;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (_otherPosts != null) ...[
-          // Rating count star above stars
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -145,7 +143,7 @@ class _PostHeaderState extends State<PostHeader>
                     size: 24,
                     color: Colors.amber,
                     frameWidth: starsWidth,
-                    sizeModifier: 0.2, // This maps to starSizeIncrease of 1.2
+                    sizeModifier: 0.2,
                     starSpacing: 3.6,
                     curvature: 0.3,
                     isInteractive: false,
@@ -178,95 +176,107 @@ class _PostHeaderState extends State<PostHeader>
   Widget build(BuildContext context) {
     final postSize = MediaQuery.of(context).size.width - 32;
     final expandedHeight = postSize * 0.75;
-    final headerHeight = widget.isExpanded ? expandedHeight : 120.0;
+    final collapsedHeight = 120.0;
 
-    return GestureDetector(
-      onVerticalDragStart: handleVerticalDragStart,
-      onVerticalDragUpdate: (details) => handleVerticalDragUpdate(
-        details,
-        onExpand: () => widget.onExpandChanged(true),
-        onCollapse: () => widget.onExpandChanged(false),
-      ),
-      behavior: HitTestBehavior.translucent,
-      child: Material(
-        color: Colors.transparent,
-        clipBehavior: Clip.none,
-        child: Container(
-          width: double.infinity,
-          height: headerHeight,
-          clipBehavior: Clip.none,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              AnimatedContainer(
-                duration: PostWidgetConstants.animationDuration,
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.vertical(
-                    top: const Radius.circular(999),
-                    bottom: Radius.circular(widget.isExpanded ? postSize / 2 : 0),
-                  ),
-                ),
-              ),
-              AnimatedBuilder(
-                animation: controller,
-                builder: (context, child) {
-                  return Positioned.fill(
-                    child: Container(
+    return AbsorbPointer(
+      absorbing: !_canExpand,
+      child: GestureDetector(
+        onVerticalDragStart: handleVerticalDragStart,
+        onVerticalDragUpdate: (details) => handleVerticalDragUpdate(
+          details,
+          onExpand: () => widget.onExpandChanged(true),
+          onCollapse: () => widget.onExpandChanged(false),
+        ),
+        onVerticalDragEnd: (details) {
+          handleVerticalDragEnd(details);
+          widget.onExpandChanged(controller.value > 0.5);
+        },
+        onVerticalDragCancel: handleVerticalDragCancel,
+        behavior: HitTestBehavior.translucent,
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, child) {
+            final currentHeight = lerpDouble(collapsedHeight, expandedHeight, controller.value)!;
+            final borderRadius = lerpDouble(0, postSize / 2, controller.value)!;
+
+            return Material(
+              color: Colors.transparent,
+              clipBehavior: Clip.none,
+              child: Container(
+                width: double.infinity,
+                height: currentHeight,
+                clipBehavior: Clip.none,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
                       decoration: BoxDecoration(
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.vertical(
                           top: const Radius.circular(999),
-                          bottom: Radius.circular(
-                              widget.isExpanded ? postSize / 2 : 0),
-                        ),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.7 * controller.value),
-                            Colors.black.withOpacity(0.5 * controller.value),
-                            Colors.black.withOpacity(0.7 * controller.value),
-                          ],
+                          bottom: Radius.circular(borderRadius),
                         ),
                       ),
                     ),
-                  );
-                },
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.vertical(
+                            top: const Radius.circular(999),
+                            bottom: Radius.circular(borderRadius),
+                          ),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.7 * controller.value),
+                              Colors.black.withOpacity(0.5 * controller.value),
+                              Colors.black.withOpacity(0.7 * controller.value),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_showProfilePicture)
+                      AnimatedProfilePicture(
+                        imageUrl: widget.userProfileImage,
+                        username: widget.username,
+                        headerHeight: currentHeight,
+                        postSize: postSize,
+                        animation: controller,
+                        isExpanded: widget.isExpanded,
+                        onTap: _canExpand ? () => widget.onExpandChanged(true) : null,
+                        canExpand: _canExpand,
+                        showFullScreenWhenExpanded: true,
+                      ),
+                    if (widget.isExpanded) ...[
+                      Positioned(
+                        top: 32,
+                        left: 0,
+                        right: 0,
+                        child: Opacity(
+                          opacity: (controller.value - 0.8).clamp(0.0, 0.2) * 5.0,
+                          child: _buildHeaderContent(),
+                        ),
+                      ),
+                      if (_isLoadingPosts)
+                        const Positioned(
+                          bottom: 16,
+                          left: 0,
+                          right: 0,
+                          height: 100,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ],
+                ),
               ),
-              if (_showProfilePicture)
-                AnimatedProfilePicture(
-                  imageUrl: widget.userProfileImage,
-                  username: widget.username,
-                  headerHeight: headerHeight,
-                  postSize: postSize,
-                  animation: controller,
-                  isExpanded: widget.isExpanded,
-                  onTap: _canExpand ? () => widget.onExpandChanged(true) : null,
-                  canExpand: _canExpand,
-                  showFullScreenWhenExpanded: true,
-                ),
-              if (widget.isExpanded) ...[
-                Positioned(
-                  top: 32,
-                  left: 0,
-                  right: 0,
-                  child: _buildHeaderContent(),
-                ),
-                if (_isLoadingPosts)
-                  const Positioned(
-                    bottom: 16,
-                    left: 0,
-                    right: 0,
-                    height: 100,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    ),
-                  ),
-              ],
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

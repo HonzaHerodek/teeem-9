@@ -37,6 +37,7 @@ class _PostCardState extends State<PostCard>
   late AnimationController _miniatureAnimation;
   final PageController _pageController = PageController();
   static const double _shrunkHeaderHeight = 60.0;
+  double _headerAnimationValue = 0.0;
 
   @override
   void initState() {
@@ -109,13 +110,11 @@ class _PostCardState extends State<PostCard>
           widget.post.likes.contains(widget.currentUserId);
       return Stack(
         children: [
-          Positioned(
-            top: constraints.maxHeight * 0.4,
-            left: 0,
-            right: 0,
+          Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     widget.post.title,
@@ -140,7 +139,7 @@ class _PostCardState extends State<PostCard>
             ),
           ),
           Positioned(
-            bottom: 24,
+            bottom: 48, // Moved higher from 24 to 48
             left: 0,
             right: 0,
             child: Center(
@@ -216,10 +215,6 @@ class _PostCardState extends State<PostCard>
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size.width - 32;
     final headerHeight = _isHeaderExpanded ? size * 0.75 : _shrunkHeaderHeight;
-    final remainingHeight = size - headerHeight;
-    final indicatorTop = _isHeaderExpanded
-        ? headerHeight + (remainingHeight / 2) - 30
-        : headerHeight - 16;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
@@ -267,24 +262,35 @@ class _PostCardState extends State<PostCard>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // PageView for step content
-              AnimatedOpacity(
-                opacity: _isHeaderExpanded ? 0.0 : 1.0,
-                duration: const Duration(milliseconds: 300),
-                child: IgnorePointer(
-                  ignoring: _isHeaderExpanded,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      return PageView.builder(
-                        controller: _pageController,
-                        itemCount: _allSteps.length,
-                        onPageChanged: _handleStepSelected,
-                        itemBuilder: (context, index) =>
-                            _buildStepContent(index, constraints),
-                      );
-                    },
-                  ),
-                ),
+              // PageView for step content with synchronized animations
+              AnimatedBuilder(
+                animation: _miniatureAnimation,
+                builder: (context, child) {
+                  // Revert to simpler animation timing
+                  final contentOpacity = 1.0 - _headerAnimationValue;
+                  final slideOffset = size * 0.2 * _headerAnimationValue;
+                  
+                  return Transform.translate(
+                    offset: Offset(0, slideOffset),
+                    child: Opacity(
+                      opacity: contentOpacity,
+                      child: IgnorePointer(
+                        ignoring: _isHeaderExpanded,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return PageView.builder(
+                              controller: _pageController,
+                              itemCount: _allSteps.length,
+                              onPageChanged: _handleStepSelected,
+                              itemBuilder: (context, index) =>
+                                  _buildStepContent(index, constraints),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
               if (_shouldShowHeader)
                 Positioned(
@@ -303,12 +309,17 @@ class _PostCardState extends State<PostCard>
                     currentPostId: widget.post.id,
                     userTraits: widget.post.userTraits,
                     rating: widget.post.ratingStats.averageRating,
+                    onAnimationChanged: (value) {
+                      setState(() {
+                        _headerAnimationValue = value;
+                      });
+                    },
                   ),
                 ),
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
-                top: indicatorTop,
+                bottom: 24, // Positioned below the heart icon with spacing
                 left: 0,
                 right: 0,
                 child: _isHeaderExpanded ||

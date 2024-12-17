@@ -4,9 +4,9 @@ import '../constants/post_widget_constants.dart';
 mixin ExpandableContentMixin<T extends StatefulWidget> on State<T>, TickerProviderStateMixin<T> {
   AnimationController? _controller;
   bool isExpanded = false;
-  double dragStartY = 0;
-  double totalDragDistance = 0;
-  static const double _dragThreshold = 50.0;
+  double _dragStartY = 0;
+  bool _isDragging = false;
+  static const double _maxDragDistance = 200.0;
 
   AnimationController get controller {
     _controller ??= AnimationController(
@@ -23,33 +23,72 @@ mixin ExpandableContentMixin<T extends StatefulWidget> on State<T>, TickerProvid
   }
 
   void handleVerticalDragStart(DragStartDetails details) {
-    dragStartY = details.globalPosition.dy;
-    totalDragDistance = 0;
+    _isDragging = true;
+    _dragStartY = details.globalPosition.dy;
   }
 
   void handleVerticalDragUpdate(DragUpdateDetails details, {
     required Function() onExpand,
     required Function() onCollapse,
   }) {
+    if (!_isDragging) return;
+
     final currentY = details.globalPosition.dy;
-    final delta = currentY - dragStartY;
-    totalDragDistance += delta.abs();
+    final delta = currentY - _dragStartY;
     
-    // Only trigger if there's significant vertical movement
-    if (totalDragDistance > _dragThreshold) {
-      if (isExpanded && delta > 0) {
-        // Swiping down while expanded - collapse
+    if (isExpanded) {
+      // When expanded, negative delta means dragging up
+      final dragPercentage = (-delta / _maxDragDistance).clamp(0.0, 1.0);
+      final newValue = 1.0 - dragPercentage;
+      controller.value = newValue;
+      
+      // Trigger collapse if we've dragged far enough
+      if (newValue <= 0.2) {
         onCollapse();
-        totalDragDistance = 0;
-      } else if (!isExpanded && delta < 0) {
-        // Swiping up while collapsed - expand
+      }
+    } else {
+      // When collapsed, negative delta means dragging up
+      final dragPercentage = (-delta / _maxDragDistance).clamp(0.0, 1.0);
+      controller.value = dragPercentage;
+      
+      // Trigger expand if we've dragged far enough
+      if (dragPercentage >= 0.8) {
         onExpand();
-        totalDragDistance = 0;
       }
     }
+  }
+
+  void handleVerticalDragEnd(DragEndDetails details) {
+    if (!_isDragging) return;
     
-    // Update start position for next delta calculation
-    dragStartY = currentY;
+    _isDragging = false;
+    
+    // Determine whether to complete or revert the animation based on current value
+    if (isExpanded) {
+      if (controller.value < 0.5) {
+        controller.animateTo(0.0);
+        isExpanded = false;
+      } else {
+        controller.animateTo(1.0);
+      }
+    } else {
+      if (controller.value > 0.5) {
+        controller.animateTo(1.0);
+        isExpanded = true;
+      } else {
+        controller.animateTo(0.0);
+      }
+    }
+  }
+
+  void handleVerticalDragCancel() {
+    _isDragging = false;
+    // Animate back to the nearest state
+    if (controller.value > 0.5) {
+      controller.animateTo(1.0);
+    } else {
+      controller.animateTo(0.0);
+    }
   }
 
   void initializeExpandableContent({
@@ -57,9 +96,7 @@ mixin ExpandableContentMixin<T extends StatefulWidget> on State<T>, TickerProvid
     Function(double)? onAnimationChanged,
   }) {
     isExpanded = startExpanded;
-    if (startExpanded) {
-      controller.value = 1.0;
-    }
+    controller.value = startExpanded ? 1.0 : 0.0;
 
     if (onAnimationChanged != null) {
       controller.addListener(() {
@@ -68,18 +105,30 @@ mixin ExpandableContentMixin<T extends StatefulWidget> on State<T>, TickerProvid
     }
   }
 
+  void updateExpandedState(bool expanded) {
+    if (isExpanded != expanded) {
+      isExpanded = expanded;
+      if (expanded) {
+        controller.animateTo(1.0);
+      } else {
+        controller.animateTo(0.0);
+      }
+    }
+  }
+
   void toggleExpanded({
     required Function(bool) onExpandChanged,
     Function(double)? onAnimationChanged,
   }) {
+    final newExpanded = !isExpanded;
     setState(() {
-      isExpanded = !isExpanded;
-      if (isExpanded) {
+      isExpanded = newExpanded;
+      if (newExpanded) {
         controller.forward();
       } else {
         controller.reverse();
       }
-      onExpandChanged(isExpanded);
+      onExpandChanged(newExpanded);
     });
   }
 }

@@ -102,27 +102,23 @@ class AnimatedProfilePicture extends StatelessWidget {
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
-        final expandProgress = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeInOut,
-        ).value;
-
-        // Use a threshold to determine when to show the expanded image
-        if (showFullScreenWhenExpanded && expandProgress > 0.9) {
+        // Show expanded image only when fully expanded
+        if (showFullScreenWhenExpanded && animation.value == 1.0) {
           return Positioned.fill(child: _buildExpandedImage());
-        } else {
-          final size = Tween<double>(
-            begin: PostWidgetConstants.collapsedAvatarSize,
-            end: headerHeight,
-          ).evaluate(animation);
-
-          final top = Tween<double>(
-            begin: 20,
-            end: 0,
-          ).evaluate(animation);
-
-          return _buildCollapsedImage(size, top);
         }
+
+        // Otherwise show the collapsing/expanding circular image
+        final size = Tween<double>(
+          begin: PostWidgetConstants.collapsedAvatarSize,
+          end: headerHeight,
+        ).evaluate(animation);
+
+        final top = Tween<double>(
+          begin: 20,
+          end: 0,
+        ).evaluate(animation);
+
+        return _buildCollapsedImage(size, top);
       },
     );
   }

@@ -5,6 +5,8 @@ class AnimatedPostContent extends StatefulWidget {
   final bool isVisible;
   final bool isAnimatingOut;
   final double topOffset;
+  final double headerHeight;
+  final Animation<double> headerAnimation;
   final VoidCallback? onAnimationComplete;
 
   const AnimatedPostContent({
@@ -12,6 +14,8 @@ class AnimatedPostContent extends StatefulWidget {
     required this.child,
     required this.isVisible,
     required this.topOffset,
+    required this.headerHeight,
+    required this.headerAnimation,
     this.isAnimatingOut = false,
     this.onAnimationComplete,
   });
@@ -77,36 +81,42 @@ class _AnimatedPostContentState extends State<AnimatedPostContent>
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableHeight = constraints.maxHeight - widget.topOffset;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-          padding: EdgeInsets.only(
-            top: widget.topOffset,
-            bottom: 16, // Ensure space at bottom for content
-          ),
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final slideValue = widget.isAnimatingOut
-                  ? -_slideAnimation.value + 50.0 // Slide down when animating out
-                  : _slideAnimation.value; // Slide up when animating in
+    return AnimatedBuilder(
+      animation: widget.headerAnimation,
+      builder: (context, child) {
+        // Calculate the content offset based on header height and animation value
+        final contentOffset = widget.headerHeight * widget.headerAnimation.value;
+        
+        // Calculate opacity - fade out faster during expansion
+        final opacity = widget.isAnimatingOut
+            ? (1.0 - widget.headerAnimation.value * 2.5).clamp(0.0, 1.0) // Fade out quickly during expansion
+            : (widget.headerAnimation.value < 0.4 
+                ? 1.0 // Keep fully visible until header is 40% expanded
+                : (1.0 - ((widget.headerAnimation.value - 0.4) * 1.67))).clamp(0.0, 1.0); // Then fade out
 
-              return Transform.translate(
-                offset: Offset(0, slideValue),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final availableHeight = constraints.maxHeight - widget.topOffset;
+            
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              padding: EdgeInsets.only(
+                top: widget.topOffset,
+                bottom: 16,
+              ),
+              child: Transform.translate(
+                offset: Offset(0, contentOffset),
                 child: Opacity(
-                  opacity: _fadeAnimation.value,
-                  child: child,
+                  opacity: opacity,
+                  child: SizedBox(
+                    height: availableHeight,
+                    child: Center(child: widget.child),
+                  ),
                 ),
-              );
-            },
-            child: SizedBox(
-              height: availableHeight,
-              child: Center(child: widget.child),
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
