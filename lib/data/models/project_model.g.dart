@@ -13,6 +13,9 @@ ProjectModel _$ProjectModelFromJson(Map<String, dynamic> json) => ProjectModel(
       creatorId: json['creatorId'] as String,
       postIds:
           (json['postIds'] as List<dynamic>).map((e) => e as String).toList(),
+      likes:
+          (json['likes'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+              const [],
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -24,6 +27,7 @@ Map<String, dynamic> _$ProjectModelToJson(ProjectModel instance) =>
       'description': instance.description,
       'creatorId': instance.creatorId,
       'postIds': instance.postIds,
+      'likes': instance.likes,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
     };

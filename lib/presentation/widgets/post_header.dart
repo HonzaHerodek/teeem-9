@@ -180,112 +180,93 @@ class _PostHeaderState extends State<PostHeader>
     final expandedHeight = postSize * 0.75;
     final headerHeight = widget.isExpanded ? expandedHeight : 120.0;
 
-    return Material(
-      color: Colors.transparent,
-      clipBehavior: Clip.none,
-      child: Container(
-        width: double.infinity,
-        height: headerHeight,
+    return GestureDetector(
+      onVerticalDragStart: handleVerticalDragStart,
+      onVerticalDragUpdate: (details) => handleVerticalDragUpdate(
+        details,
+        onExpand: () => widget.onExpandChanged(true),
+        onCollapse: () => widget.onExpandChanged(false),
+      ),
+      behavior: HitTestBehavior.translucent,
+      child: Material(
+        color: Colors.transparent,
         clipBehavior: Clip.none,
-        child: Stack(
+        child: Container(
+          width: double.infinity,
+          height: headerHeight,
           clipBehavior: Clip.none,
-          children: [
-            AnimatedContainer(
-              duration: PostWidgetConstants.animationDuration,
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.vertical(
-                  top: const Radius.circular(999),
-                  bottom: Radius.circular(widget.isExpanded ? postSize / 2 : 0),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedContainer(
+                duration: PostWidgetConstants.animationDuration,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.vertical(
+                    top: const Radius.circular(999),
+                    bottom: Radius.circular(widget.isExpanded ? postSize / 2 : 0),
+                  ),
                 ),
               ),
-            ),
-            AnimatedBuilder(
-              animation: controller,
-              builder: (context, child) {
-                return Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.vertical(
-                        top: const Radius.circular(999),
-                        bottom: Radius.circular(
-                            widget.isExpanded ? postSize / 2 : 0),
-                      ),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.7 * controller.value),
-                          Colors.black.withOpacity(0.5 * controller.value),
-                          Colors.black.withOpacity(0.7 * controller.value),
-                        ],
+              AnimatedBuilder(
+                animation: controller,
+                builder: (context, child) {
+                  return Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.vertical(
+                          top: const Radius.circular(999),
+                          bottom: Radius.circular(
+                              widget.isExpanded ? postSize / 2 : 0),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.7 * controller.value),
+                            Colors.black.withOpacity(0.5 * controller.value),
+                            Colors.black.withOpacity(0.7 * controller.value),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-            if (_showProfilePicture)
-              AnimatedProfilePicture(
-                imageUrl: widget.userProfileImage,
-                username: widget.username,
-                headerHeight: headerHeight,
-                postSize: postSize,
-                animation: controller,
-                isExpanded: widget.isExpanded,
-                onTap: _canExpand ? () => widget.onExpandChanged(true) : null,
-                canExpand: _canExpand,
-                showFullScreenWhenExpanded: true,
+                  );
+                },
               ),
-            if (widget.isExpanded) ...[
-              Positioned(
-                top: 32,
-                left: 0,
-                right: 0,
-                child: _buildHeaderContent(),
-              ),
-              if (_isLoadingPosts)
-                const Positioned(
-                  bottom: 16,
+              if (_showProfilePicture)
+                AnimatedProfilePicture(
+                  imageUrl: widget.userProfileImage,
+                  username: widget.username,
+                  headerHeight: headerHeight,
+                  postSize: postSize,
+                  animation: controller,
+                  isExpanded: widget.isExpanded,
+                  onTap: _canExpand ? () => widget.onExpandChanged(true) : null,
+                  canExpand: _canExpand,
+                  showFullScreenWhenExpanded: true,
+                ),
+              if (widget.isExpanded) ...[
+                Positioned(
+                  top: 32,
                   left: 0,
                   right: 0,
-                  height: 100,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  child: _buildHeaderContent(),
+                ),
+                if (_isLoadingPosts)
+                  const Positioned(
+                    bottom: 16,
+                    left: 0,
+                    right: 0,
+                    height: 100,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
                     ),
                   ),
-                ),
+              ],
             ],
-            if (widget.isExpanded)
-              Positioned.fill(
-                child: GestureDetector(
-                  onVerticalDragStart: handleVerticalDragStart,
-                  onVerticalDragUpdate: (details) => handleVerticalDragUpdate(
-                    details,
-                    onExpand: () {},
-                    onCollapse: () => widget.onExpandChanged(false),
-                  ),
-                ),
-              ),
-            if (!widget.isExpanded && _canExpand)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 120,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTapDown: (_) => widget.onExpandChanged(true),
-                  onVerticalDragStart: handleVerticalDragStart,
-                  onVerticalDragUpdate: (details) => handleVerticalDragUpdate(
-                    details,
-                    onExpand: () => widget.onExpandChanged(true),
-                    onCollapse: () {},
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );

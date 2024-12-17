@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../data/models/post_model.dart';
 import 'rating_stars.dart';
 import 'post_header.dart';
-import 'step_indicators.dart';
+import 'step_indicators/step_dots.dart';
+import 'step_indicators/step_miniatures.dart';
 import 'step_carousel.dart';
 
 class PostCard extends StatefulWidget {
@@ -315,7 +316,7 @@ class _PostCardState extends State<PostCard>
                     ? StepMiniatures(
                         steps: _allSteps,
                         currentStep: _currentStep,
-                        onHeaderExpandChanged: _handleHeaderExpandChange,
+                        onExpand: () => _handleHeaderExpandChange(false),
                         onTransformToDots:
                             _showMiniatures ? _handleTransformToDots : null,
                         pageController: _pageController,
@@ -323,8 +324,8 @@ class _PostCardState extends State<PostCard>
                     : StepDots(
                         steps: _allSteps,
                         currentStep: _currentStep,
-                        onHeaderExpandChanged: _handleHeaderExpandChange,
-                        onTransformToMiniatures: _handleTransformToMiniatures,
+                        onExpand: () => _handleHeaderExpandChange(true),
+                        onMiniaturize: _handleTransformToMiniatures,
                       ),
               ),
             ],

@@ -3,8 +3,9 @@ import '../../../data/models/post_model.dart';
 import '../../../core/utils/step_type_utils.dart';
 import '../constants/post_widget_constants.dart';
 import '../rating_stars.dart';
+import '../step_indicators/step_miniatures.dart';
 
-class ExpandablePostContent extends StatelessWidget {
+class ExpandablePostContent extends StatefulWidget {
   final bool isExpanded;
   final Animation<double> animation;
   final ScrollController scrollController;
@@ -34,9 +35,39 @@ class ExpandablePostContent extends StatelessWidget {
     required this.width,
   });
 
+  @override
+  State<ExpandablePostContent> createState() => _ExpandablePostContentState();
+}
+
+class _ExpandablePostContentState extends State<ExpandablePostContent> {
+  late final PageController _pageController;
+  int _currentStep = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _pageController.addListener(_handlePageChange);
+  }
+
+  @override
+  void dispose() {
+    _pageController.removeListener(_handlePageChange);
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _handlePageChange() {
+    if (_pageController.page != null && _pageController.page!.round() != _currentStep) {
+      setState(() {
+        _currentStep = _pageController.page!.round();
+      });
+    }
+  }
+
   Widget _buildHeartButton() {
     return GestureDetector(
-      onTap: onUnsave,
+      onTap: widget.onUnsave,
       child: ShaderMask(
         shaderCallback: (Rect bounds) {
           return LinearGradient(
@@ -69,57 +100,9 @@ class ExpandablePostContent extends StatelessWidget {
     );
   }
 
-  Widget _buildStepMiniature(PostStep step, int index) {
-    final color = StepTypeUtils.getColorForStepType(step.type);
-    final icon = StepTypeUtils.getIconForStepType(step.type);
-    final miniatureSize =
-        width * PostWidgetConstants.miniatureScale * 0.8; // Reduced size
-
-    return Container(
-      width: miniatureSize,
-      height: miniatureSize,
-      alignment: Alignment.center,
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      child: Container(
-        width: miniatureSize * 0.9,
-        height: miniatureSize * 0.9,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withOpacity(0.1),
-          border: Border.all(
-            color: color,
-            width: 2,
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                color: color,
-                size: miniatureSize * 0.25,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${index + 1}',
-                style: TextStyle(
-                  color: color,
-                  fontSize: miniatureSize * 0.15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildExpandedContent() {
-    final miniatureSize = width * PostWidgetConstants.miniatureScale * 0.8;
     final ratingSize = PostWidgetConstants.starSize * 0.7;
-    final starsWidth = width * 0.4;
+    final starsWidth = widget.width * 0.4;
 
     return Stack(
       fit: StackFit.expand,
@@ -136,9 +119,9 @@ class ExpandablePostContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(height: constraints.maxHeight * 0.15),
-                if (totalRatings != null)
+                if (widget.totalRatings != null)
                   Text(
-                    '$totalRatings ratings',
+                    '${widget.totalRatings} ratings',
                     style: const TextStyle(
                       color: Colors.amber,
                       fontSize: 12,
@@ -150,7 +133,7 @@ class ExpandablePostContent extends StatelessWidget {
                   child: SizedBox(
                     width: starsWidth,
                     child: RatingStars(
-                      rating: rating,
+                      rating: widget.rating,
                       size: ratingSize,
                       color: Colors.amber,
                       frameWidth: starsWidth,
@@ -162,19 +145,16 @@ class ExpandablePostContent extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                if (steps != null && steps!.isNotEmpty)
+                if (widget.steps != null && widget.steps!.isNotEmpty)
                   SizedBox(
-                    height: miniatureSize,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      controller: scrollController,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: steps!.length,
-                      padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                      itemBuilder: (context, index) => _buildStepMiniature(
-                        steps![index],
-                        index,
-                      ),
+                    height: 72,
+                    child: StepMiniatures(
+                      steps: widget.steps!,
+                      currentStep: _currentStep,
+                      onExpand: () {},
+                      pageController: _pageController,
+                      showSelection: false, // Disable selection effects for compact post
+                      centerBetweenFirstTwo: true, // Center between first two miniatures
                     ),
                   ),
                 SizedBox(height: constraints.maxHeight * 0.1),
@@ -196,7 +176,7 @@ class ExpandablePostContent extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -210,7 +190,7 @@ class ExpandablePostContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  description,
+                  widget.description,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -225,7 +205,7 @@ class ExpandablePostContent extends StatelessWidget {
             ),
           ),
         ),
-        if (showHeartButton)
+        if (widget.showHeartButton)
           Positioned(
             bottom: 8,
             left: 0,
@@ -241,18 +221,18 @@ class ExpandablePostContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: animation,
+      animation: widget.animation,
       builder: (context, child) {
-        return isExpanded
+        return widget.isExpanded
             ? Positioned.fill(
                 child: Opacity(
-                  opacity: animation.value,
+                  opacity: widget.animation.value,
                   child: _buildExpandedContent(),
                 ),
               )
             : Positioned.fill(
                 child: Opacity(
-                  opacity: 1 - animation.value,
+                  opacity: 1 - widget.animation.value,
                   child: _buildCollapsedContent(),
                 ),
               );

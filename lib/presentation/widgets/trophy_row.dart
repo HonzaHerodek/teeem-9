@@ -67,48 +67,76 @@ class _TrophyRowState extends State<TrophyRow> {
   }
 
   Widget _buildTrophyRow() {
-    // Sort trophies to show achieved ones in the middle
-    final achievedTrophies = widget.trophies.where((t) => t.isAchieved).toList();
+    // Sort trophies to show exactly 3 achieved ones in the middle
+    final achievedTrophies = widget.trophies.where((t) => t.isAchieved).take(3).toList();
     final unachievedTrophies = widget.trophies.where((t) => !t.isAchieved).toList();
     
-    final displayTrophies = [
-      ...unachievedTrophies.take(3),
-      ...achievedTrophies,
-      ...unachievedTrophies.skip(3).take(2),
-    ];
+    // Calculate remaining count after showing max 9 trophies (3 + 3 + 3)
+    final visibleCount = 9;
+    final remainingCount = widget.trophies.length > visibleCount 
+        ? widget.trophies.length - visibleCount 
+        : 0;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 300),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ...displayTrophies.take(8).map((trophy) {
-                  final size = trophy.isAchieved ? 28.0 : 20.0;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: _buildTrophyIcon(trophy, size: size),
-                  );
-                }),
-                if (widget.trophies.length > 8)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: Text(
-                      '+${widget.trophies.length - 8}',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontWeight: FontWeight.bold,
+    return Center(
+      child: SizedBox(
+        width: 300, // Fixed width
+        child: Stack(
+          children: [
+            // Scrollable trophy row with padding
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Left grey trophies (3)
+                    ...unachievedTrophies.take(3).map((trophy) => 
+                      Padding(
+                        padding: const EdgeInsets.only(right: 3),
+                        child: _buildTrophyIcon(trophy, size: 20),
                       ),
                     ),
-                  ),
-              ],
+                    const SizedBox(width: 6), // Spacing before colored trophies
+                    // Center colored trophies (3)
+                    ...achievedTrophies.map((trophy) =>
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: _buildTrophyIcon(trophy, size: 28),
+                      ),
+                    ),
+                    const SizedBox(width: 6), // Spacing after colored trophies
+                    // Right grey trophies (3)
+                    ...unachievedTrophies.skip(3).take(3).map((trophy) =>
+                      Padding(
+                        padding: const EdgeInsets.only(right: 3),
+                        child: _buildTrophyIcon(trophy, size: 20),
+                      ),
+                    ),
+                    // Space for the counter
+                    if (remainingCount > 0)
+                      const SizedBox(width: 28),
+                  ],
+                ),
+              ),
             ),
-          ),
+            // Fixed position remaining count (no background)
+            if (remainingCount > 0)
+              Positioned(
+                right: 16, // Align with padding
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Text(
+                    '+$remainingCount',
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -127,7 +155,6 @@ class _TrophyRowState extends State<TrophyRow> {
       builder: (context, constraints) {
         final rowWidth = constraints.maxWidth - 32;
         final cardWidth = (rowWidth / 2.5).floor().toDouble();
-        final spacing = 8.0;
 
         return Container(
           constraints: const BoxConstraints(maxHeight: 400),
@@ -206,7 +233,7 @@ class _TrophyRowState extends State<TrophyRow> {
                     fontWeight: FontWeight.bold,
                   ),
               textAlign: TextAlign.center,
-              maxLines: 2, // Changed from 1 to 2
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
