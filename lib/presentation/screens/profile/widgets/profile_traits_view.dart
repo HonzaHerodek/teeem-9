@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../data/models/trait_model.dart';
+import '../../../../core/services/trait_service.dart';
 import '../../../widgets/add_trait_dialog.dart';
 
 class ProfileTraitsView extends StatelessWidget {
@@ -19,6 +20,7 @@ class ProfileTraitsView extends StatelessWidget {
     const double itemWidth = 120;
 
     return Container(
+      key: ValueKey(trait.id), // Add key for proper widget updates
       width: itemWidth,
       height: itemHeight,
       margin: const EdgeInsets.only(right: 8),
@@ -70,14 +72,19 @@ class ProfileTraitsView extends StatelessWidget {
   void _showAddTraitDialog(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) => AddTraitDialog(
-        onTraitAdded: onTraitAdded,
+        onTraitAdded: (trait) {
+          print('[ProfileTraitsView] New trait added: ${trait.id}');
+          onTraitAdded(trait);
+        },
       ),
     );
   }
 
   Widget _buildTraitCategory(String category, List<TraitModel> categoryTraits, BuildContext context) {
     return Column(
+      key: ValueKey('category_$category'), // Add key for proper widget updates
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
@@ -100,7 +107,7 @@ class ProfileTraitsView extends StatelessWidget {
               ...categoryTraits.map(_buildTraitBubble),
               IconButton(
                 icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                onPressed: () => _showAddTraitDialog(context),
+                onPressed: isLoading ? null : () => _showAddTraitDialog(context),
               ),
             ],
           ),
@@ -112,41 +119,61 @@ class ProfileTraitsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('[ProfileTraitsView] Building with ${traits.length} traits, isLoading: $isLoading');
+    
+    final availableCategories = TraitService.getAvailableCategories();
     final traitsByCategory = <String, List<TraitModel>>{};
+    
+    for (var category in availableCategories) {
+      traitsByCategory[category] = [];
+    }
+    
     for (var trait in traits) {
-      traitsByCategory.putIfAbsent(trait.category, () => []).add(trait);
+      print('[ProfileTraitsView] Processing trait: ${trait.id} - ${trait.name}:${trait.value}');
+      traitsByCategory[trait.category]?.add(trait);
     }
 
-    return Stack(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: Container( // Wrap in Container with key for proper animation
+        key: ValueKey('traits_container_${traits.length}'),
+        width: double.infinity,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            for (var category in traitsByCategory.keys)
-              _buildTraitCategory(category, traitsByCategory[category]!, context),
-            if (traits.isEmpty)
-              Center(
-                child: TextButton.icon(
-                  onPressed: () => _showAddTraitDialog(context),
-                  icon: const Icon(Icons.add, color: Colors.amber),
-                  label: const Text(
-                    'Add your first trait',
-                    style: TextStyle(color: Colors.amber),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var entry in traitsByCategory.entries)
+                  if (entry.value.isNotEmpty)
+                    _buildTraitCategory(entry.key, entry.value, context),
+                if (traits.isEmpty)
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: isLoading ? null : () => _showAddTraitDialog(context),
+                      icon: const Icon(Icons.add, color: Colors.amber),
+                      label: const Text(
+                        'Add your first trait',
+                        style: TextStyle(color: Colors.amber),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (isLoading)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                    ),
                   ),
                 ),
               ),
           ],
         ),
-        if (isLoading)
-          Container(
-            color: Colors.black.withOpacity(0.5),
-            child: const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
-              ),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }

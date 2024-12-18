@@ -131,6 +131,7 @@ class MockUserRepository implements UserRepository {
   @override
   Future<UserModel?> getCurrentUser() async {
     await Future.delayed(_delay);
+    print('[MockUserRepo] Getting current user with ${_users['user_1']?.traits.length} traits');
     return _users['user_1']; // Return the test user
   }
 
@@ -146,12 +147,32 @@ class MockUserRepository implements UserRepository {
 
   @override
   Future<void> updateUser(UserModel user) async {
+    print('[MockUserRepo] Starting user update');
+    print('[MockUserRepo] Current traits: ${_users[user.id]?.traits.map((t) => '${t.category}:${t.name}')}');
+    print('[MockUserRepo] New traits: ${user.traits.map((t) => '${t.category}:${t.name}')}');
+    
     await Future.delayed(_delay);
     if (!_users.containsKey(user.id)) {
       throw NotFoundException('User not found');
     }
-    print('Updating user with traits: ${user.traits}'); // Debug log
+    
+    final oldTraitsCount = _users[user.id]?.traits.length ?? 0;
+    
+    // Update the user
     _users[user.id] = user;
+    
+    // Verify the update
+    final updatedUser = _users[user.id];
+    if (updatedUser != null) {
+      final newTraitsCount = updatedUser.traits.length;
+      print('[MockUserRepo] Traits count - Before: $oldTraitsCount, After: $newTraitsCount');
+      
+      if (newTraitsCount > oldTraitsCount) {
+        print('[MockUserRepo] Successfully added new trait(s)');
+      } else {
+        print('[MockUserRepo] Warning: No new traits were added');
+      }
+    }
   }
 
   @override

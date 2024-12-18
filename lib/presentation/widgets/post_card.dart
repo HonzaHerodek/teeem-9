@@ -139,7 +139,7 @@ class _PostCardState extends State<PostCard>
             ),
           ),
           Positioned(
-            bottom: 48, // Moved higher from 24 to 48
+            bottom: 48,
             left: 0,
             right: 0,
             child: Center(
@@ -266,7 +266,6 @@ class _PostCardState extends State<PostCard>
               AnimatedBuilder(
                 animation: _miniatureAnimation,
                 builder: (context, child) {
-                  // Revert to simpler animation timing
                   final contentOpacity = 1.0 - _headerAnimationValue;
                   final slideOffset = size * 0.2 * _headerAnimationValue;
                   
@@ -274,19 +273,37 @@ class _PostCardState extends State<PostCard>
                     offset: Offset(0, slideOffset),
                     child: Opacity(
                       opacity: contentOpacity,
-                      child: IgnorePointer(
-                        ignoring: _isHeaderExpanded,
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return PageView.builder(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onHorizontalDragEnd: (details) {
+                              if (_isHeaderExpanded) return;
+                              
+                              if (details.primaryVelocity! > 0 && _currentStep > 0) {
+                                _pageController.previousPage(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
+                                );
+                              } else if (details.primaryVelocity! < 0 && _currentStep < _allSteps.length - 1) {
+                                _pageController.nextPage(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
+                                );
+                              }
+                            },
+                            child: PageView.builder(
                               controller: _pageController,
                               itemCount: _allSteps.length,
                               onPageChanged: _handleStepSelected,
+                              physics: _isHeaderExpanded 
+                                ? const NeverScrollableScrollPhysics()
+                                : const BouncingScrollPhysics(),
                               itemBuilder: (context, index) =>
                                   _buildStepContent(index, constraints),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   );
@@ -319,7 +336,7 @@ class _PostCardState extends State<PostCard>
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
-                bottom: 24, // Positioned below the heart icon with spacing
+                bottom: 24,
                 left: 0,
                 right: 0,
                 child: _isHeaderExpanded ||

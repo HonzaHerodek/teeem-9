@@ -159,67 +159,72 @@ class _FeedViewState extends State<FeedView> with DimmingController<FeedView> {
     ];
   }
 
+  Widget _buildFeedContent(BuildContext context, FeedState state) {
+    if (state is FeedInitial || state is FeedLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        ),
+      );
+    }
+
+    if (state is FeedFailure) {
+      return ErrorView(
+        message: state.error,
+        onRetry: () {
+          context.read<FeedBloc>().add(const FeedStarted());
+        },
+      );
+    }
+
+    if (state is FeedSuccess) {
+      final topPadding = MediaQuery.of(context).padding.top;
+      const headerBaseHeight = 64.0;
+      const chipsHeight = 96.0;
+
+      return MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: FeedContent(
+          scrollController: _scrollController,
+          posts: state.posts,
+          projects: state.projects,
+          currentUserId: state.currentUserId,
+          isCreatingPost: _isCreatingPost,
+          postCreationKey: _postCreationKey,
+          onCancel: _toggleCreatePost,
+          onComplete: _handlePostCreationComplete,
+          topPadding: topPadding + headerBaseHeight + chipsHeight,
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final topPadding = MediaQuery.of(context).padding.top;
-    const headerBaseHeight = 64.0;
-    const chipsHeight = 96.0;
-
     return Scaffold(
       body: Stack(
         children: [
-          // Background and Content
-          AnimatedGradientBackground(
-            child: BlocBuilder<FeedBloc, FeedState>(
-              builder: (context, state) {
-                if (state is FeedInitial || state is FeedLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  );
-                }
-
-                if (state is FeedFailure) {
-                  return ErrorView(
-                    message: state.error,
-                    onRetry: () {
-                      context.read<FeedBloc>().add(const FeedStarted());
-                    },
-                  );
-                }
-
-                if (state is FeedSuccess) {
-                  return MediaQuery.removePadding(
-                    context: context,
-                    removeTop: true,
-                    child: FeedContent(
-                      scrollController: _scrollController,
-                      posts: state.posts,
-                      projects: state.projects,
-                      currentUserId: state.currentUserId,
-                      isCreatingPost: _isCreatingPost,
-                      postCreationKey: _postCreationKey,
-                      onCancel: _toggleCreatePost,
-                      onComplete: _handlePostCreationComplete,
-                      topPadding: topPadding + headerBaseHeight + chipsHeight,
-                    ),
-                  );
-                }
-
-                return const SizedBox.shrink();
-              },
-            ),
-          ).withDimming(
-            isDimmed: isDimmed,
-            config: dimmingConfig,
-            excludedKeys: excludedKeys,
-            source: dimmingSource,
+          // Background
+          const AnimatedGradientBackground(
+            child: SizedBox.expand(),
           ),
-          // Header (on top)
+          
+          // Feed Content with Gesture Detection
+          AbsorbPointer(
+            absorbing: _isProfileOpen || _headerController.state.isSearchVisible,
+            child: BlocBuilder<FeedBloc, FeedState>(
+              builder: _buildFeedContent,
+            ),
+          ),
+
+          // Header
           FeedHeader(
             headerController: _headerController,
           ),
+          
           // Action Buttons
           FeedActionButtons(
             plusActionButtonKey: _plusActionButtonKey,
@@ -227,6 +232,7 @@ class _FeedViewState extends State<FeedView> with DimmingController<FeedView> {
             onProfileTap: _toggleProfile,
             onActionButtonTap: _handleActionButton,
           ),
+          
           // Profile Panel
           SlidingPanel(
             isOpen: _isProfileOpen,

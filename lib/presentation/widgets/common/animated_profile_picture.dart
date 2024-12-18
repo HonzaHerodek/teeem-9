@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/post_widget_constants.dart';
+import 'profile_image_frame.dart';
+import 'profile_image_frame_style.dart';
 
 class AnimatedProfilePicture extends StatelessWidget {
   final String? imageUrl;
@@ -25,21 +27,6 @@ class AnimatedProfilePicture extends StatelessWidget {
     this.showFullScreenWhenExpanded = true,
   });
 
-  Widget _buildErrorPlaceholder() {
-    return Container(
-      color: Colors.black,
-      child: Center(
-        child: Text(
-          username[0].toUpperCase(),
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16 * PostWidgetConstants.textScale,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildExpandedImage() {
     return Container(
       decoration: BoxDecoration(
@@ -58,12 +45,13 @@ class AnimatedProfilePicture extends StatelessWidget {
             Colors.black.withOpacity(0.4),
             BlendMode.darken,
           ),
-          child: Image.network(
-            imageUrl!,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-            errorBuilder: (_, __, ___) => _buildErrorPlaceholder(),
+          child: ProfileImageFrame(
+            imageUrl: imageUrl,
+            fallbackText: username,
+            style: ProfileImageFrameStyle.headerExpanded(
+              size: double.infinity,
+              borderColor: Colors.white,
+            ),
           ),
         ),
       ),
@@ -78,15 +66,15 @@ class AnimatedProfilePicture extends StatelessWidget {
       child: Center(
         child: GestureDetector(
           onTap: canExpand && !isExpanded ? onTap : null,
-          child: Container(
+          child: SizedBox(
             width: size,
             height: size,
-            decoration: PostWidgetConstants.circularBorderDecoration,
-            child: ClipOval(
-              child: Image.network(
-                imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildErrorPlaceholder(),
+            child: ProfileImageFrame(
+              imageUrl: imageUrl,
+              fallbackText: username,
+              style: ProfileImageFrameStyle.compactCollapsed(
+                size: size,
+                borderColor: Colors.white,
               ),
             ),
           ),

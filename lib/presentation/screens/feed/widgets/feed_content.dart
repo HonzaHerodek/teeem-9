@@ -8,7 +8,7 @@ import '../../../widgets/post_creation/in_feed_post_creation.dart';
 import '../feed_bloc/feed_bloc.dart';
 import '../feed_bloc/feed_event.dart';
 
-class FeedContent extends StatelessWidget {
+class FeedContent extends StatefulWidget {
   final ScrollController scrollController;
   final List<PostModel> posts;
   final List<ProjectModel> projects;
@@ -32,142 +32,179 @@ class FeedContent extends StatelessWidget {
     required this.topPadding,
   });
 
+  @override
+  State<FeedContent> createState() => _FeedContentState();
+}
+
+class _FeedContentState extends State<FeedContent> {
+  bool _isScrolling = false;
+  double _startScrollPosition = 0;
+
   int get _totalItemCount {
-    int count = posts.length;
-    // Add project cards (first one at start, then one after every 5 posts)
-    if (projects.isNotEmpty) {
-      count += 1; // First project
-      count += ((posts.length - 1) / 5).floor(); // Additional projects
+    int count = widget.posts.length;
+    if (widget.projects.isNotEmpty) {
+      count += 1;
+      count += ((widget.posts.length - 1) / 5).floor();
     }
-    // Add post creation widget if active
-    if (isCreatingPost) {
+    if (widget.isCreatingPost) {
       count += 1;
     }
     return count;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (posts.isEmpty && projects.isEmpty && !isCreatingPost) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.post_add,
-              size: 64,
-              color: Colors.white70,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No content yet',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Be the first to create a post!',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
-                  ),
-            ),
-          ],
-        ),
+  void _handleScrollStart(DragStartDetails details) {
+    _isScrolling = true;
+    _startScrollPosition = widget.scrollController.position.pixels;
+  }
+
+  void _handleScrollUpdate(DragUpdateDetails details) {
+    if (!_isScrolling) return;
+    
+    final delta = details.primaryDelta ?? 0;
+    widget.scrollController.jumpTo(widget.scrollController.position.pixels - delta);
+  }
+
+  void _handleScrollEnd(DragEndDetails details) {
+    if (!_isScrolling) return;
+    _isScrolling = false;
+
+    final velocity = details.primaryVelocity ?? 0;
+    if (velocity.abs() > 0) {
+      widget.scrollController.animateTo(
+        widget.scrollController.position.pixels - velocity * 0.2,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
       );
     }
+  }
 
-    return CustomScrollView(
-      controller: scrollController,
-      slivers: [
-        SliverPadding(
-          padding: EdgeInsets.only(top: topPadding),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                // Show post creation widget at the very top if active
-                if (isCreatingPost && index == 0) {
-                  return InFeedPostCreation(
-                    key: postCreationKey,
-                    onCancel: onCancel,
-                    onComplete: onComplete,
-                  );
-                }
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.post_add,
+            size: 64,
+            color: Colors.white70,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No content yet',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Be the first to create a post!',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white70,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                // Adjust index for post creation widget
-                final adjustedIndex = isCreatingPost ? index - 1 : index;
+  @override
+  Widget build(BuildContext context) {
+    if (widget.posts.isEmpty && widget.projects.isEmpty && !widget.isCreatingPost) {
+      return _buildEmptyState();
+    }
 
-                // Show first project at index 0 (after post creation if active)
-                if (projects.isNotEmpty && adjustedIndex == 0) {
-                  return ProjectCard(
-                    project: projects[0],
-                    onTap: () {
-                      context.read<FeedBloc>().add(
-                        FeedProjectSelected(projects[0].id),
-                      );
-                    },
-                  );
-                }
+    return GestureDetector(
+      onVerticalDragStart: _handleScrollStart,
+      onVerticalDragUpdate: _handleScrollUpdate,
+      onVerticalDragEnd: _handleScrollEnd,
+      behavior: HitTestBehavior.translucent,
+      child: CustomScrollView(
+        controller: widget.scrollController,
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.only(top: widget.topPadding),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  if (widget.isCreatingPost && index == 0) {
+                    return InFeedPostCreation(
+                      key: widget.postCreationKey,
+                      onCancel: widget.onCancel,
+                      onComplete: widget.onComplete,
+                    );
+                  }
 
-                // Calculate if this position should show another project
-                // We subtract 1 from adjustedIndex because we already showed a project at the start
-                final isProjectPosition = projects.length > 1 && 
+                  final adjustedIndex = widget.isCreatingPost ? index - 1 : index;
+
+                  if (widget.projects.isNotEmpty && adjustedIndex == 0) {
+                    return ProjectCard(
+                      project: widget.projects[0],
+                      onTap: () {
+                        context.read<FeedBloc>().add(
+                          FeedProjectSelected(widget.projects[0].id),
+                        );
+                      },
+                    );
+                  }
+
+                  final isProjectPosition = widget.projects.length > 1 && 
                                        adjustedIndex > 1 && 
-                                       ((adjustedIndex - 1) % 6 == 5); // Every 6th position after first project
+                                       ((adjustedIndex - 1) % 6 == 5);
 
-                if (isProjectPosition) {
-                  final projectIndex = (((adjustedIndex - 1) - 5) ~/ 6 + 1) % projects.length;
-                  return ProjectCard(
-                    project: projects[projectIndex],
-                    onTap: () {
-                      context.read<FeedBloc>().add(
-                        FeedProjectSelected(projects[projectIndex].id),
+                  if (isProjectPosition) {
+                    final projectIndex = (((adjustedIndex - 1) - 5) ~/ 6 + 1) % widget.projects.length;
+                    return ProjectCard(
+                      project: widget.projects[projectIndex],
+                      onTap: () {
+                        context.read<FeedBloc>().add(
+                          FeedProjectSelected(widget.projects[projectIndex].id),
+                        );
+                      },
+                    );
+                  }
+
+                  final postIndex = adjustedIndex - 1 - ((adjustedIndex - 1) ~/ 6);
+                  
+                  if (postIndex >= widget.posts.length) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final post = widget.posts[postIndex];
+                  return PostCard(
+                    post: post,
+                    currentUserId: widget.currentUserId,
+                    onLike: () {
+                      context.read<FeedBloc>().add(FeedPostLiked(post.id));
+                    },
+                    onComment: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Comments coming soon!')),
                       );
                     },
+                    onShare: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Share feature coming soon!')),
+                      );
+                    },
+                    onRate: (rating) {
+                      context.read<FeedBloc>().add(FeedPostRated(post.id, rating));
+                    },
                   );
-                }
-
-                // Calculate actual post index accounting for project cards
-                final postIndex = adjustedIndex - 1 - ((adjustedIndex - 1) ~/ 6);
-                
-                if (postIndex >= posts.length) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    ),
-                  );
-                }
-
-                final post = posts[postIndex];
-                return PostCard(
-                  post: post,
-                  currentUserId: currentUserId,
-                  onLike: () {
-                    context.read<FeedBloc>().add(FeedPostLiked(post.id));
-                  },
-                  onComment: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Comments coming soon!')),
-                    );
-                  },
-                  onShare: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Share feature coming soon!')),
-                    );
-                  },
-                  onRate: (rating) {
-                    context.read<FeedBloc>().add(FeedPostRated(post.id, rating));
-                  },
-                );
-              },
-              childCount: _totalItemCount,
+                },
+                childCount: _totalItemCount,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

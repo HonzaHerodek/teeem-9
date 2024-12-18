@@ -68,21 +68,39 @@ class UserModel {
     List<RatingModel>? ratings,
     List<TraitModel>? traits,
   }) {
-    return UserModel(
+    print('[UserModel] copyWith called with traits: ${traits?.map((t) => '${t.category}:${t.name}:${t.value}')}');
+    
+    // Create deep copies of lists
+    final newFollowers = followers != null ? List<String>.from(followers) : List<String>.from(this.followers);
+    final newFollowing = following != null ? List<String>.from(following) : List<String>.from(this.following);
+    final newRatings = ratings != null ? List<RatingModel>.from(ratings) : List<RatingModel>.from(this.ratings);
+    final newTraits = traits != null ? List<TraitModel>.from(traits) : List<TraitModel>.from(this.traits);
+    
+    // Create deep copy of settings if provided
+    final newSettings = settings != null 
+        ? Map<String, dynamic>.from(settings)
+        : this.settings != null 
+            ? Map<String, dynamic>.from(this.settings!)
+            : null;
+
+    final result = UserModel(
       id: id ?? this.id,
       username: username ?? this.username,
       email: email ?? this.email,
       profileImage: profileImage ?? this.profileImage,
       bio: bio ?? this.bio,
-      followers: followers ?? this.followers,
-      following: following ?? this.following,
-      settings: settings ?? this.settings,
+      followers: newFollowers,
+      following: newFollowing,
+      settings: newSettings,
       createdAt: createdAt ?? this.createdAt,
       lastActive: lastActive ?? this.lastActive,
       targetingCriteria: targetingCriteria ?? this.targetingCriteria,
-      ratings: ratings ?? this.ratings,
-      traits: traits ?? this.traits,
+      ratings: newRatings,
+      traits: newTraits,
     );
+
+    print('[UserModel] copyWith result traits: ${result.traits.map((t) => '${t.category}:${t.name}:${t.value}')}');
+    return result;
   }
 
   @override
@@ -106,7 +124,7 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel{id: $id, username: $username, email: $email}';
+    return 'UserModel{id: $id, username: $username, email: $email, traits: ${traits.length}}';
   }
 
   bool get hasProfileImage => profileImage != null && profileImage!.isNotEmpty;

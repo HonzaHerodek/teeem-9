@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/circular_action_button.dart';
-import '../../../widgets/user_avatar.dart';
+import '../../../widgets/common/profile_image_frame.dart';
+import '../../../widgets/common/profile_image_frame_style.dart';
 import '../../../widgets/rating_stars.dart';
 import '../../../widgets/trophy_row.dart';
 import '../profile_bloc/profile_state.dart';
@@ -83,10 +84,13 @@ class _ProfileHeaderSectionState extends State<ProfileHeaderSection> {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                UserAvatar(
+                ProfileImageFrame(
                   imageUrl: user.profileImage,
-                  name: user.username,
-                  size: profileSize,
+                  fallbackText: user.username,
+                  style: ProfileImageFrameStyle.profile(
+                    size: profileSize,
+                    borderColor: Colors.white,
+                  ),
                 ),
                 Positioned(
                   left: 50,

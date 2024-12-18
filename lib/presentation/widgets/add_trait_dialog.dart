@@ -33,48 +33,70 @@ class _AddTraitDialogState extends State<AddTraitDialog> {
         _selectedTrait = null;
         _valueController.clear();
       });
-      debugPrint('Available traits for $_selectedCategory: $_availableTraits'); // Debug log
+      print('[AddTraitDialog] Available traits for $_selectedCategory: $_availableTraits');
     }
   }
 
   String _generateUniqueId() {
-    return '${_selectedCategory}_${DateTime.now().millisecondsSinceEpoch}';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final id = '${_selectedCategory}_$timestamp';
+    print('[AddTraitDialog] Generated ID: $id');
+    return id;
   }
 
   void _handleTraitAdded() {
+    print('[AddTraitDialog] Handling trait addition...');
+    print('[AddTraitDialog] Selected category: $_selectedCategory');
+    print('[AddTraitDialog] Selected trait: ${_selectedTrait?.name}');
+    print('[AddTraitDialog] Value: ${_valueController.text}');
+
     if (_selectedCategory != null &&
         _selectedTrait != null &&
         _valueController.text.isNotEmpty) {
-      debugPrint('Creating new trait...'); // Debug log
+      print('[AddTraitDialog] Creating new trait...');
+      
       // Create a new trait with a unique ID
       final newTrait = TraitModel(
-        id: _generateUniqueId(), // Generate a unique ID
+        id: _generateUniqueId(),
         name: _selectedTrait!.name,
         iconData: _selectedTrait!.iconData,
         value: _valueController.text,
         category: _selectedCategory!,
         displayOrder: _selectedTrait!.displayOrder,
       );
-      debugPrint('New trait created: $newTrait'); // Debug log
+      
+      print('[AddTraitDialog] New trait created: ${newTrait.id} - ${newTrait.category}:${newTrait.name}:${newTrait.value}');
       
       // Ensure the callback is called
       try {
+        print('[AddTraitDialog] Calling onTraitAdded callback...');
         widget.onTraitAdded(newTrait);
-        debugPrint('Trait added callback executed successfully'); // Debug log
+        print('[AddTraitDialog] Callback executed successfully');
+        
+        print('[AddTraitDialog] Closing dialog...');
+        Navigator.pop(context);
+        print('[AddTraitDialog] Dialog closed');
       } catch (e) {
-        debugPrint('Error in trait added callback: $e'); // Error log
+        print('[AddTraitDialog] Error in trait added callback: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding trait: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-      
-      Navigator.pop(context);
     } else {
-      debugPrint('Cannot add trait: missing category, trait, or value'); // Debug log
+      print('[AddTraitDialog] Cannot add trait: missing required fields');
+      print('  Category: ${_selectedCategory != null}');
+      print('  Trait: ${_selectedTrait != null}');
+      print('  Value: ${_valueController.text.isNotEmpty}');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final categories = TraitService.getAvailableCategories();
-    debugPrint('Available categories: $categories'); // Debug log
+    print('[AddTraitDialog] Building dialog, available categories: $categories');
 
     return Dialog(
       backgroundColor: Colors.grey[900],
@@ -119,7 +141,7 @@ class _AddTraitDialogState extends State<AddTraitDialog> {
                 );
               }).toList(),
               onChanged: (value) {
-                debugPrint('Category selected: $value'); // Debug log
+                print('[AddTraitDialog] Category selected: $value');
                 setState(() {
                   _selectedCategory = value;
                 });
@@ -153,7 +175,7 @@ class _AddTraitDialogState extends State<AddTraitDialog> {
                   );
                 }).toList(),
                 onChanged: (value) {
-                  debugPrint('Trait selected: $value'); // Debug log
+                  print('[AddTraitDialog] Trait selected: ${value?.name}');
                   setState(() {
                     _selectedTrait = value;
                     if (value != null) {
@@ -178,7 +200,7 @@ class _AddTraitDialogState extends State<AddTraitDialog> {
                   ),
                 ),
                 onChanged: (value) {
-                  debugPrint('Value changed: $value'); // Debug log
+                  print('[AddTraitDialog] Value changed: $value');
                   setState(() {}); // Trigger rebuild to update Add button state
                 },
               ),
@@ -188,7 +210,10 @@ class _AddTraitDialogState extends State<AddTraitDialog> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    print('[AddTraitDialog] Cancel pressed');
+                    Navigator.pop(context);
+                  },
                   child: const Text(
                     'Cancel',
                     style: TextStyle(color: Colors.white70),

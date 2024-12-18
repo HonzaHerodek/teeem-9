@@ -4,9 +4,9 @@ import '../../../../domain/repositories/post_repository.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/services/rating_service.dart';
 import '../../../../core/services/logger_service.dart';
-import 'mixins/trait_management_mixin.dart';
 import 'profile_event.dart';
 import 'profile_state.dart';
+import 'mixins/trait_management_mixin.dart';
 
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> with TraitManagementMixin {
   @override
@@ -24,7 +24,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> with TraitManagementM
     on<ProfileRefreshed>(_onProfileRefreshed);
     on<ProfilePostsRequested>(_onProfilePostsRequested);
     on<ProfileRatingReceived>(_onProfileRatingReceived);
-    on<ProfileTraitAdded>(handleTraitAdded);
+    on<ProfileTraitAdded>(handleTraitAdded); // Use the mixin's implementation
     on<ProfilePostUnsaved>(_onProfilePostUnsaved);
   }
 
@@ -142,16 +142,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> with TraitManagementM
         throw AppException('User not found');
       }
 
-      // Remove the post from saved posts
       final updatedPosts = state.userPosts.where((post) => post.id != event.postId).toList();
 
-      // Update state with the post removed
       emit(state.copyWith(
         userPosts: updatedPosts,
         error: null,
       ));
 
-      // Update the repository
       await postRepository.unsavePost(event.postId, state.user!.id);
     } catch (e) {
       _logger.e('Error in ProfileBloc._onProfilePostUnsaved', error: e);

@@ -6,13 +6,13 @@ import '../../../domain/repositories/post_repository.dart';
 import '../../../domain/repositories/user_repository.dart';
 import '../../../core/services/rating_service.dart';
 import '../../widgets/error_view.dart';
-import '../../widgets/profile_posts_grid.dart';
-import 'widgets/profile_header_section.dart';
-import 'widgets/profile_traits_view.dart';
-import 'widgets/profile_network_view.dart';
 import 'profile_bloc/profile_bloc.dart';
 import 'profile_bloc/profile_event.dart';
 import 'profile_bloc/profile_state.dart';
+import 'widgets/profile_content.dart';
+import 'widgets/profile_loading_overlay.dart';
+import 'mixins/profile_trait_handler_mixin.dart';
+import 'mixins/profile_trait_state_mixin.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -63,147 +63,85 @@ class ProfileView extends StatefulWidget {
   State<ProfileView> createState() => _ProfileViewState();
 }
 
-class _ProfileViewState extends State<ProfileView> {
+class _ProfileViewState extends State<ProfileView> with ProfileTraitStateMixin, ProfileTraitHandlerMixin {
   bool _showTraits = false;
   bool _showNetwork = false;
-  bool _isAddingTrait = false;
-
-  Widget _buildContent(BuildContext context, ProfileState state) {
-    if (_showTraits) {
-      return ProfileTraitsView(
-        traits: state.user?.traits ?? [],
-        onTraitAdded: (trait) async {
-          setState(() => _isAddingTrait = true);
-          try {
-            context.read<ProfileBloc>().add(ProfileTraitAdded(trait));
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Added ${trait.name} trait'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to add trait: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          } finally {
-            setState(() => _isAddingTrait = false);
-          }
-        },
-        isLoading: _isAddingTrait,
-      );
-    } else if (_showNetwork) {
-      return const ProfileNetworkView();
-    }
-    
-    return const SizedBox.shrink(); // Return empty widget instead of username text
-  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ProfileBloc, ProfileState>(
-      listener: (context, state) {
-        if (state.hasError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.error!),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
-      builder: (context, state) {
-        if (state.isLoading && !_isAddingTrait) {
-          return const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
-            ),
-          );
-        }
-
-        if (state.user == null) {
-          return ErrorView(
-            message: state.error ?? 'Failed to load profile',
-            onRetry: () {
-              context.read<ProfileBloc>().add(const ProfileStarted());
-            },
-          );
-        }
-
-        return CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Column(
-                children: [
-                  ProfileHeaderSection(
-                    state: state,
-                    onTraitsPressed: () {
-                      setState(() {
-                        _showTraits = !_showTraits;
-                        _showNetwork = false;
-                      });
-                    },
-                    onNetworkPressed: () {
-                      setState(() {
-                        _showNetwork = !_showNetwork;
-                        _showTraits = false;
-                      });
-                    },
-                    showTraits: _showTraits,
-                    showNetwork: _showNetwork,
-                  ),
-                  _buildContent(context, state),
-                  if (_showTraits || _showNetwork) const SizedBox(height: 16),
-                  if (!_showTraits && !_showNetwork) ...[
-                    Text(
-                      state.user?.username ?? '',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  const Divider(color: Colors.white24),
-                  if (state.userPosts.isNotEmpty)
-                    ProfilePostsGrid(
-                      posts: state.userPosts,
-                      currentUserId: state.user!.id,
-                      onLike: (post) {
-                        // TODO: Implement like functionality
-                      },
-                      onComment: (post) {
-                        // TODO: Implement comment functionality
-                      },
-                      onShare: (post) {
-                        // TODO: Implement share functionality
-                      },
-                      onRate: (rating, post) {
-                        context.read<ProfileBloc>().add(
-                              ProfileRatingReceived(rating, state.user!.id),
-                            );
-                      },
-                    ),
-                ],
-              ),
-            ),
-            if (state.userPosts.isEmpty)
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Text(
-                    'No posts yet',
-                    style: TextStyle(color: Colors.white70),
-                  ),
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<ProfileBloc, ProfileState>(
+          listenWhen: (previous, current) => 
+            previous.user?.traits.length != current.user?.traits.length,
+          listener: (context, state) {
+            print('[ProfileView] Traits changed: ${state.user?.traits.length} traits');
+            // Force rebuild when traits change
+            setState(() {
+              _showTraits = true;
+              _showNetwork = false;
+            });
+          },
+        ),
+        BlocListener<ProfileBloc, ProfileState>(
+          listenWhen: (previous, current) => 
+            !previous.hasError && current.hasError,
+          listener: (context, state) {
+            if (state.hasError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.error!),
+                  backgroundColor: Colors.red,
                 ),
+              );
+            }
+          },
+        ),
+      ],
+      child: BlocBuilder<ProfileBloc, ProfileState>(
+        builder: (context, state) {
+          print('[ProfileView] Building with state - isLoading: ${state.isLoading}, traits: ${state.user?.traits.length}');
+          
+          if (state.isInitial && state.isLoading) {
+            return const ProfileLoadingOverlay(isInitialLoading: true);
+          }
+
+          if (state.user == null) {
+            return ErrorView(
+              message: state.error ?? 'Failed to load profile',
+              onRetry: () {
+                context.read<ProfileBloc>().add(const ProfileStarted());
+              },
+            );
+          }
+
+          return Stack(
+            children: [
+              ProfileContent(
+                key: ValueKey('profile_content_${state.user?.traits.length}'),
+                state: state,
+                showTraits: _showTraits,
+                showNetwork: _showNetwork,
+                onTraitsPressed: () {
+                  setState(() {
+                    _showTraits = !_showTraits;
+                    _showNetwork = false;
+                  });
+                },
+                onNetworkPressed: () {
+                  setState(() {
+                    _showNetwork = !_showNetwork;
+                    _showTraits = false;
+                  });
+                },
+                onTraitAdded: (trait) => handleTraitAdded(context, trait),
               ),
-          ],
-        );
-      },
+              if (state.isLoading && !state.isInitial)
+                const ProfileLoadingOverlay(),
+            ],
+          );
+        },
+      ),
     );
   }
 }

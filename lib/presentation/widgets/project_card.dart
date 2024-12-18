@@ -2,25 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import '../../core/di/injection.dart';
-import '../../data/models/post_model.dart';
 import '../../data/models/project_model.dart';
 import '../../domain/repositories/post_repository.dart';
 import '../../presentation/screens/feed/feed_bloc/feed_bloc.dart';
-import '../../presentation/screens/feed/feed_bloc/feed_event.dart';
 import '../../presentation/screens/feed/feed_bloc/feed_state.dart';
 import 'common/glass_container.dart';
-import 'common/section_header.dart';
-import 'compact_post_card.dart';
-import 'project/selectable_compact_post_card.dart';
+import 'project/project_header.dart';
+import 'project/project_post_list.dart';
+import 'project/project_action_buttons.dart';
 import 'project/project_post_selection_service.dart';
-import 'project/square_action_button.dart';
 
 class ProjectCard extends StatelessWidget {
   final ProjectModel project;
   final String? currentUserId;
   final VoidCallback? onTap;
   final double elevation;
-  static const double _postSize = 140.0;
   static const Duration _animationDuration = Duration(milliseconds: 300);
   static const Curve _animationCurve = Curves.easeInOut;
 
@@ -32,95 +28,19 @@ class ProjectCard extends StatelessWidget {
     this.elevation = 0,
   });
 
-  Widget _buildPostList(List<PostModel> posts, bool isSelectable,
-      ProjectPostSelectionService service,
-      {bool isProjectPosts = false}) {
-    if (posts.isEmpty) return const SizedBox.shrink();
-
-    return AnimatedOpacity(
-      duration: _animationDuration,
-      curve: _animationCurve,
-      opacity: 1.0,
-      child: SizedBox(
-        height: _postSize,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: posts.length,
-          padding: EdgeInsets.zero,
-          physics: const BouncingScrollPhysics(),
-          itemBuilder: (context, index) {
-            final post = posts[index];
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: isSelectable
-                  ? SelectableCompactPostCard(
-                      post: post,
-                      width: _postSize,
-                      height: _postSize,
-                      isSelected: service.selectedPostIds.contains(post.id),
-                      onToggle: () => service.togglePostSelection(post.id),
-                      isProjectPost: isProjectPosts,
-                    )
-                  : CompactPostCard(
-                      post: post,
-                      width: _postSize,
-                      height: _postSize,
-                      circular: true,
-                    ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context, ProjectPostSelectionService service) {
+  void _handleSettingsPressed(BuildContext context, ProjectPostSelectionService service, FeedState state) {
     if (service.isSelectionMode) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SquareActionButton(
-            icon: Icons.add_circle_outline,
-            onPressed: () {
-              // TODO: Implement add post action
-            },
-            size: 40,
-          ),
-          const SizedBox(width: 40), // Increased from 32 to 40
-          SquareActionButton(
-            icon: Icons.add_box_outlined,
-            onPressed: () {
-              // TODO: Implement add sub-project action
-            },
-            size: 40,
-          ),
-        ],
-      );
+      service.handlePostsAdded(context);
+    } else if (state is FeedSuccess) {
+      service.enterSelectionMode(state.posts);
     } else {
-      return _buildLikeButton(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to edit posts at this time'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
-  }
-
-  Widget _buildLikeButton(BuildContext context) {
-    final isLiked =
-        currentUserId != null && project.likes.contains(currentUserId);
-
-    return IconButton(
-      icon: Icon(
-        isLiked ? Icons.favorite : Icons.favorite_border,
-        color: isLiked ? Colors.red : Colors.white,
-        size: 32,
-      ),
-      onPressed: () {
-        if (currentUserId == null) return;
-
-        if (isLiked) {
-          context.read<FeedBloc>().add(FeedProjectUnliked(project.id));
-        } else {
-          context.read<FeedBloc>().add(FeedProjectLiked(project.id));
-        }
-      },
-    );
   }
 
   @override
@@ -154,9 +74,7 @@ class ProjectCard extends StatelessWidget {
               orElse: () => project,
             );
             if (updatedProject.postIds != project.postIds) {
-              context
-                  .read<ProjectPostSelectionService>()
-                  .updatePostIds(updatedProject.postIds);
+              context.read<ProjectPostSelectionService>().updatePostIds(updatedProject.postIds);
             }
           }
         },
@@ -166,171 +84,81 @@ class ProjectCard extends StatelessWidget {
               return Transform.translate(
                 offset: Offset(0, -elevation),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 8.0),
-                  child: Stack(
-                    children: [
-                      GestureDetector(
-                        onTap: service.isSelectionMode ? null : onTap,
-                        behavior: HitTestBehavior.opaque,
-                        child: GlassContainer(
-                          padding: EdgeInsets.zero,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                    24.0, 20.0, 24.0, 0.0),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        project.name,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge
-                                            ?.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                    ),
-                                    SquareActionButton(
-                                      icon: service.isSelectionMode
-                                          ? Icons.check
-                                          : Icons.settings,
-                                      onPressed: () {
-                                        if (service.isSelectionMode) {
-                                          service.handlePostsAdded(context);
-                                        } else if (state is FeedSuccess) {
-                                          service
-                                              .enterSelectionMode(state.posts);
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  'Unable to edit posts at this time'),
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      size: 40,
-                                    ),
-                                  ],
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: GlassContainer(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ProjectHeader(
+                          project: project,
+                          service: service,
+                          onTap: onTap,
+                          onSettingsPressed: (context) => _handleSettingsPressed(context, service, state),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24.0, 8.0, 24.0, 16.0),
+                          child: Text(
+                            project.description,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white.withOpacity(0.8),
                                 ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                    24.0, 8.0, 24.0, 16.0),
-                                child: Text(
-                                  project.description,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: Colors.white.withOpacity(0.8),
-                                      ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (service.isLoading)
-                                const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16.0),
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
-                                    ),
-                                  ),
-                                )
-                              else if (service.errorMessage.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 24.0),
-                                  child: Text(
-                                    service.errorMessage,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: Colors.white.withOpacity(0.7),
-                                        ),
-                                  ),
-                                )
-                              else ...[
-                                if (service.projectPosts.isNotEmpty) ...[
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 24.0),
-                                    child: AnimatedSwitcher(
-                                      duration: _animationDuration,
-                                      child: service.isSelectionMode
-                                          ? const SectionHeader(
-                                              title: 'Project Posts')
-                                          : const SizedBox(height: 16),
-                                    ),
-                                  ),
-                                  AnimatedSwitcher(
-                                    duration: _animationDuration,
-                                    child: _buildPostList(
-                                      service.projectPosts,
-                                      service.isSelectionMode,
-                                      service,
-                                      isProjectPosts: true,
-                                    ),
-                                  ),
-                                ],
-                                if (service.isSelectionMode) ...[
-                                  AnimatedContainer(
-                                    duration: _animationDuration,
-                                    curve: _animationCurve,
-                                    height:
-                                        service.isSelectionMode ? 16.0 : 0.0,
-                                    child: const SizedBox(),
-                                  ),
-                                  AnimatedOpacity(
-                                    duration: _animationDuration,
-                                    curve: _animationCurve,
-                                    opacity:
-                                        service.isSelectionMode ? 1.0 : 0.0,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 24.0),
-                                          child: SectionHeader(
-                                              title: 'Available Posts'),
-                                        ),
-                                        _buildPostList(
-                                          service.availablePosts,
-                                          true,
-                                          service,
-                                          isProjectPosts: false,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                    top: 16.0, bottom: 8.0),
-                                child: Center(child: _buildActionButtons(context, service)),
-                              ),
-                            ],
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ),
-                    ],
+                        if (service.isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                          )
+                        else if (service.errorMessage.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                            child: Text(
+                              service.errorMessage,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.white.withOpacity(0.7),
+                                  ),
+                            ),
+                          )
+                        else ...[
+                          if (service.projectPosts.isNotEmpty)
+                            ProjectPostList(
+                              posts: service.projectPosts,
+                              isSelectable: service.isSelectionMode,
+                              service: service,
+                              isProjectPosts: true,
+                              title: service.isSelectionMode ? 'Project Posts' : '',
+                            ),
+                          if (service.isSelectionMode) ...[
+                            AnimatedContainer(
+                              duration: _animationDuration,
+                              curve: _animationCurve,
+                              height: service.isSelectionMode ? 16.0 : 0.0,
+                              child: const SizedBox(),
+                            ),
+                            ProjectPostList(
+                              posts: service.availablePosts,
+                              isSelectable: true,
+                              service: service,
+                              isProjectPosts: false,
+                              title: 'Available Posts',
+                            ),
+                          ],
+                        ],
+                        ProjectActionButtons(
+                          project: project,
+                          currentUserId: currentUserId,
+                          service: service,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );

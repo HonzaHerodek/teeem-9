@@ -56,9 +56,9 @@ class TraitModel {
           id == other.id &&
           name == other.name &&
           iconData == other.iconData &&
-          value == value &&
-          category == category &&
-          displayOrder == displayOrder;
+          value == other.value &&  // Fixed: now compares with other.value
+          category == other.category &&
+          displayOrder == other.displayOrder;
 
   @override
   int get hashCode =>
@@ -68,4 +68,7 @@ class TraitModel {
       value.hashCode ^
       category.hashCode ^
       displayOrder.hashCode;
+
+  @override
+  String toString() => 'TraitModel{id: $id, name: $name, value: $value, category: $category}';
 }
