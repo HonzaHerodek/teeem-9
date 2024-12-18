@@ -1,5 +1,5 @@
 import '../../../../data/models/targeting_model.dart';
-import '../../../widgets/filtering/models/filter_type.dart';
+import '../models/filter_type.dart';
 
 abstract class FeedEvent {
   const FeedEvent();

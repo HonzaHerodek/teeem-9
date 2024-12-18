@@ -1,56 +1,135 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../widgets/filtering/menu/filter_menu.dart';
-import '../../../widgets/filtering/models/filter_type.dart';
 import '../../../widgets/notifications/notification_icon.dart';
+import '../controllers/feed_header_controller.dart';
 import '../feed_bloc/feed_bloc.dart';
 import '../feed_bloc/feed_event.dart';
+import 'feed_search_bar.dart';
+import 'target_icon.dart';
 
-class FeedHeader extends StatelessWidget {
+class FeedHeader extends StatefulWidget {
   const FeedHeader({super.key});
 
-  void _applyFilter(BuildContext context, FilterType filterType) {
-    context.read<FeedBloc>().add(FeedFilterChanged(filterType));
+  @override
+  State<FeedHeader> createState() => _FeedHeaderState();
+}
+
+class _FeedHeaderState extends State<FeedHeader> {
+  late final FeedHeaderController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = FeedHeaderController();
   }
 
-  void _handleSearch(BuildContext context, String query) {
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleSearch(String query) {
     context.read<FeedBloc>().add(FeedSearchChanged(query));
   }
 
-  void _handleNotificationTap() {
-    // TODO: Implement notifications handling
+  Widget _buildSearchBar() {
+    if (_controller.state.isSearchVisible && _controller.state.activeFilterType != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: FeedSearchBar(
+          key: ValueKey(_controller.state.activeFilterType),
+          filterType: _controller.state.activeFilterType!,
+          onSearch: _handleSearch,
+          onClose: _controller.closeSearch,
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 64 + MediaQuery.of(context).padding.top,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top,
-        left: 16,
-        right: 16,
-      ),
-      child: Row(
-        children: [
-          // Left: Notifications
-          NotificationIcon(
-            notificationCount: 0,
-            onTap: _handleNotificationTap,
-          ),
-          
-          // Center and Right: Filter Menu with search
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: FilterMenu(
-                onGroupFilter: () => _applyFilter(context, FilterType.group),
-                onPairFilter: () => _applyFilter(context, FilterType.pair),
-                onSelfFilter: () => _applyFilter(context, FilterType.self),
-                onSearch: (query) => _handleSearch(context, query),
-              ),
-            ),
-          ),
-        ],
+    final topPadding = MediaQuery.of(context).padding.top;
+    const headerHeight = 64.0;
+
+    return Material(
+      type: MaterialType.transparency,
+      elevation: 0,
+      child: SizedBox(
+        height: headerHeight + topPadding,
+        child: ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) {
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                // Gesture pass-through layer
+                if (!_controller.state.isSearchVisible && 
+                    !_controller.state.isNotificationMenuOpen)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTapDown: (_) => _controller.closeSearch(),
+                    ),
+                  ),
+                // Content layer
+                Positioned.fill(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: topPadding),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Left Column: Notifications
+                        SizedBox(
+                          width: 56,
+                          child: Center(
+                            child: NotificationIcon(
+                              notificationCount: 0,
+                              onTap: _controller.toggleNotificationMenu,
+                              isActive: _controller.state.isNotificationMenuOpen,
+                            ),
+                          ),
+                        ),
+                        
+                        // Center Column: Search Bar
+                        Expanded(
+                          child: Center(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              transitionBuilder: (Widget child, Animation<double> animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SizeTransition(
+                                    sizeFactor: animation,
+                                    axis: Axis.horizontal,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: _buildSearchBar(),
+                            ),
+                          ),
+                        ),
+                        
+                        // Right Column: Target Icon
+                        SizedBox(
+                          width: 56,
+                          child: Center(
+                            child: TargetIcon(
+                              onTap: _controller.toggleSearch,
+                              isActive: _controller.state.isSearchVisible,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

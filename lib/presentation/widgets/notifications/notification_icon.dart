@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class NotificationIcon extends StatelessWidget {
   final int? notificationCount;
   final VoidCallback onTap;
+  final bool isActive;
 
   const NotificationIcon({
     super.key,
     this.notificationCount,
     required this.onTap,
+    this.isActive = false,
   });
 
   @override
@@ -15,12 +17,18 @@ class NotificationIcon extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        IconButton(
-          icon: const Icon(
-            Icons.notifications_outlined,
-            color: Colors.white,
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isActive ? Colors.pink : Colors.transparent,
           ),
-          onPressed: onTap,
+          child: IconButton(
+            icon: Icon(
+              isActive ? Icons.notifications : Icons.notifications_outlined,
+              color: Colors.white,
+            ),
+            onPressed: onTap,
+          ),
         ),
         if (notificationCount != null && notificationCount! > 0)
           Positioned(

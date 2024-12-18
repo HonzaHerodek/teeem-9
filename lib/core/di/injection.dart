@@ -16,7 +16,7 @@ import '../../domain/repositories/post_repository.dart';
 import '../../domain/repositories/step_type_repository.dart';
 import '../../domain/repositories/user_repository.dart';
 import '../../domain/repositories/project_repository.dart';
-import '../../presentation/widgets/filtering/services/filter_service.dart';
+import '../../presentation/screens/feed/services/filter_service.dart';
 
 final getIt = GetIt.instance;
 

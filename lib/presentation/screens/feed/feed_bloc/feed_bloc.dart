@@ -3,7 +3,7 @@ import 'package:myapp/domain/repositories/auth_repository.dart';
 import 'package:myapp/domain/repositories/post_repository.dart';
 import 'package:myapp/domain/repositories/project_repository.dart';
 import 'package:myapp/core/services/rating_service.dart';
-import 'package:myapp/presentation/widgets/filtering/services/filter_service.dart';
+import '../services/filter_service.dart';
 import 'feed_event.dart';
 import 'feed_state.dart';
 import 'mixins/post_actions_mixin.dart';

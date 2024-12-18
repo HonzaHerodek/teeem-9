@@ -17,6 +17,7 @@ class FeedContent extends StatelessWidget {
   final GlobalKey<InFeedPostCreationState> postCreationKey;
   final VoidCallback onCancel;
   final Function(bool) onComplete;
+  final double topPadding;
 
   const FeedContent({
     super.key,
@@ -28,6 +29,7 @@ class FeedContent extends StatelessWidget {
     required this.postCreationKey,
     required this.onCancel,
     required this.onComplete,
+    required this.topPadding,
   });
 
   int get _totalItemCount {
@@ -78,88 +80,91 @@ class FeedContent extends StatelessWidget {
     return CustomScrollView(
       controller: scrollController,
       slivers: [
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              // Show post creation widget at the very top if active
-              if (isCreatingPost && index == 0) {
-                return InFeedPostCreation(
-                  key: postCreationKey,
-                  onCancel: onCancel,
-                  onComplete: onComplete,
-                );
-              }
+        SliverPadding(
+          padding: EdgeInsets.only(top: topPadding),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                // Show post creation widget at the very top if active
+                if (isCreatingPost && index == 0) {
+                  return InFeedPostCreation(
+                    key: postCreationKey,
+                    onCancel: onCancel,
+                    onComplete: onComplete,
+                  );
+                }
 
-              // Adjust index for post creation widget
-              final adjustedIndex = isCreatingPost ? index - 1 : index;
+                // Adjust index for post creation widget
+                final adjustedIndex = isCreatingPost ? index - 1 : index;
 
-              // Show first project at index 0 (after post creation if active)
-              if (projects.isNotEmpty && adjustedIndex == 0) {
-                return ProjectCard(
-                  project: projects[0],
-                  onTap: () {
-                    context.read<FeedBloc>().add(
-                      FeedProjectSelected(projects[0].id),
-                    );
-                  },
-                );
-              }
+                // Show first project at index 0 (after post creation if active)
+                if (projects.isNotEmpty && adjustedIndex == 0) {
+                  return ProjectCard(
+                    project: projects[0],
+                    onTap: () {
+                      context.read<FeedBloc>().add(
+                        FeedProjectSelected(projects[0].id),
+                      );
+                    },
+                  );
+                }
 
-              // Calculate if this position should show another project
-              // We subtract 1 from adjustedIndex because we already showed a project at the start
-              final isProjectPosition = projects.length > 1 && 
-                                     adjustedIndex > 1 && 
-                                     ((adjustedIndex - 1) % 6 == 5); // Every 6th position after first project
+                // Calculate if this position should show another project
+                // We subtract 1 from adjustedIndex because we already showed a project at the start
+                final isProjectPosition = projects.length > 1 && 
+                                       adjustedIndex > 1 && 
+                                       ((adjustedIndex - 1) % 6 == 5); // Every 6th position after first project
 
-              if (isProjectPosition) {
-                final projectIndex = (((adjustedIndex - 1) - 5) ~/ 6 + 1) % projects.length;
-                return ProjectCard(
-                  project: projects[projectIndex],
-                  onTap: () {
-                    context.read<FeedBloc>().add(
-                      FeedProjectSelected(projects[projectIndex].id),
-                    );
-                  },
-                );
-              }
+                if (isProjectPosition) {
+                  final projectIndex = (((adjustedIndex - 1) - 5) ~/ 6 + 1) % projects.length;
+                  return ProjectCard(
+                    project: projects[projectIndex],
+                    onTap: () {
+                      context.read<FeedBloc>().add(
+                        FeedProjectSelected(projects[projectIndex].id),
+                      );
+                    },
+                  );
+                }
 
-              // Calculate actual post index accounting for project cards
-              final postIndex = adjustedIndex - 1 - ((adjustedIndex - 1) ~/ 6);
-              
-              if (postIndex >= posts.length) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                // Calculate actual post index accounting for project cards
+                final postIndex = adjustedIndex - 1 - ((adjustedIndex - 1) ~/ 6);
+                
+                if (postIndex >= posts.length) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
                     ),
-                  ),
-                );
-              }
+                  );
+                }
 
-              final post = posts[postIndex];
-              return PostCard(
-                post: post,
-                currentUserId: currentUserId,
-                onLike: () {
-                  context.read<FeedBloc>().add(FeedPostLiked(post.id));
-                },
-                onComment: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Comments coming soon!')),
-                  );
-                },
-                onShare: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Share feature coming soon!')),
-                  );
-                },
-                onRate: (rating) {
-                  context.read<FeedBloc>().add(FeedPostRated(post.id, rating));
-                },
-              );
-            },
-            childCount: _totalItemCount,
+                final post = posts[postIndex];
+                return PostCard(
+                  post: post,
+                  currentUserId: currentUserId,
+                  onLike: () {
+                    context.read<FeedBloc>().add(FeedPostLiked(post.id));
+                  },
+                  onComment: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Comments coming soon!')),
+                    );
+                  },
+                  onShare: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Share feature coming soon!')),
+                    );
+                  },
+                  onRate: (rating) {
+                    context.read<FeedBloc>().add(FeedPostRated(post.id, rating));
+                  },
+                );
+              },
+              childCount: _totalItemCount,
+            ),
           ),
         ),
       ],

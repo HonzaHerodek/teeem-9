@@ -1,49 +1,47 @@
 import 'package:flutter/material.dart';
 
 enum FilterType {
-  none,
   group,
   pair,
   self,
-}
+  none;
 
-extension FilterTypeExtension on FilterType {
   String get displayName {
     switch (this) {
-      case FilterType.none:
-        return 'All Posts';
       case FilterType.group:
-        return 'Group Posts';
+        return 'Group';
       case FilterType.pair:
-        return 'Pair Posts';
+        return 'Pair';
       case FilterType.self:
-        return 'Individual Posts';
+        return 'Self';
+      case FilterType.none:
+        return 'None';
     }
   }
 
   String get searchPlaceholder {
     switch (this) {
-      case FilterType.none:
-        return 'Search all posts...';
       case FilterType.group:
-        return 'Search in group posts...';
+        return 'Search in groups...';
       case FilterType.pair:
-        return 'Search in pair posts...';
+        return 'Search in pairs...';
       case FilterType.self:
-        return 'Search in individual posts...';
+        return 'Search in my posts...';
+      case FilterType.none:
+        return 'Search...';
     }
   }
 
   IconData get icon {
     switch (this) {
-      case FilterType.none:
-        return Icons.filter_list;
       case FilterType.group:
-        return Icons.groups;
+        return Icons.group;
       case FilterType.pair:
         return Icons.people;
       case FilterType.self:
         return Icons.person;
+      case FilterType.none:
+        return Icons.search;
     }
   }
 }
