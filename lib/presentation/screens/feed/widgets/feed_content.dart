@@ -103,33 +103,36 @@ class FeedContent extends StatelessWidget {
                     project: projects[0],
                     onTap: () {
                       context.read<FeedBloc>().add(
-                        FeedProjectSelected(projects[0].id),
-                      );
+                            FeedProjectSelected(projects[0].id),
+                          );
                     },
                   );
                 }
 
                 // Calculate if this position should show another project
                 // We subtract 1 from adjustedIndex because we already showed a project at the start
-                final isProjectPosition = projects.length > 1 && 
-                                       adjustedIndex > 1 && 
-                                       ((adjustedIndex - 1) % 6 == 5); // Every 6th position after first project
+                final isProjectPosition = projects.length > 1 &&
+                    adjustedIndex > 1 &&
+                    ((adjustedIndex - 1) % 6 ==
+                        5); // Every 6th position after first project
 
                 if (isProjectPosition) {
-                  final projectIndex = (((adjustedIndex - 1) - 5) ~/ 6 + 1) % projects.length;
+                  final projectIndex =
+                      (((adjustedIndex - 1) - 5) ~/ 6 + 1) % projects.length;
                   return ProjectCard(
                     project: projects[projectIndex],
                     onTap: () {
                       context.read<FeedBloc>().add(
-                        FeedProjectSelected(projects[projectIndex].id),
-                      );
+                            FeedProjectSelected(projects[projectIndex].id),
+                          );
                     },
                   );
                 }
 
                 // Calculate actual post index accounting for project cards
-                final postIndex = adjustedIndex - 1 - ((adjustedIndex - 1) ~/ 6);
-                
+                final postIndex =
+                    adjustedIndex - 1 - ((adjustedIndex - 1) ~/ 6);
+
                 if (postIndex >= posts.length) {
                   return const Center(
                     child: Padding(
@@ -155,11 +158,14 @@ class FeedContent extends StatelessWidget {
                   },
                   onShare: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Share feature coming soon!')),
+                      const SnackBar(
+                          content: Text('Share feature coming soon!')),
                     );
                   },
                   onRate: (rating) {
-                    context.read<FeedBloc>().add(FeedPostRated(post.id, rating));
+                    context
+                        .read<FeedBloc>()
+                        .add(FeedPostRated(post.id, rating));
                   },
                 );
               },

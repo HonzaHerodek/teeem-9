@@ -65,12 +65,15 @@ class DimmingOverlay extends StatelessWidget {
     return Stack(
       children: [
         child,
-        AnimatedOpacity(
-          opacity: isDimmed ? 1.0 : 0.0,
-          duration: _animationDuration,
-          curve: _animationCurve,
-          child: _buildDimmingLayer(context),
-        ),
+          IgnorePointer(
+            ignoring: !isDimmed,
+            child: AnimatedOpacity(
+              opacity: isDimmed ? 1.0 : 0.0,
+              duration: _animationDuration,
+              curve: _animationCurve,
+              child: _buildDimmingLayer(context),
+            ),
+          ),
       ],
     );
   }

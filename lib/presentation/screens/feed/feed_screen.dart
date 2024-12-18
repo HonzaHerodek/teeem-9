@@ -167,6 +167,7 @@ class _FeedViewState extends State<FeedView> with DimmingController<FeedView> {
 
     return Scaffold(
       body: Stack(
+        fit: StackFit.expand,
         children: [
           // Background and Content
           AnimatedGradientBackground(
