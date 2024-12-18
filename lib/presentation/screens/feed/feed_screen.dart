@@ -128,7 +128,8 @@ class _FeedViewState extends State<FeedView> {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    const headerHeight = 64.0;
+    const headerBaseHeight = 64.0;
+    const chipsHeight = 96.0; // Increased to account for two rows of chips (40 + 8 + 40 + 8)
 
     return Scaffold(
       body: Stack(
@@ -167,7 +168,7 @@ class _FeedViewState extends State<FeedView> {
                       postCreationKey: _postCreationKey,
                       onCancel: _toggleCreatePost,
                       onComplete: _handlePostCreationComplete,
-                      topPadding: topPadding + headerHeight,
+                      topPadding: topPadding + headerBaseHeight + chipsHeight,
                     ),
                   );
                 }

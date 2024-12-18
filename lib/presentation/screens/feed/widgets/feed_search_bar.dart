@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/filter_type.dart';
+import '../../../../presentation/widgets/common/gradient_box_border.dart';
 
 class FeedSearchBar extends StatefulWidget {
   final FilterType filterType;
@@ -39,14 +40,19 @@ class _FeedSearchBarState extends State<FeedSearchBar> {
     final theme = Theme.of(context);
     
     return Container(
-      height: 40, // Match button height
+      height: 40,
       constraints: const BoxConstraints(maxWidth: 280),
-      margin: const EdgeInsets.symmetric(vertical: 12), // Center vertically in header
+      margin: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: theme.cardColor.withOpacity(0.95), // Updated opacity to 95%
-        borderRadius: BorderRadius.circular(20), // Half of height
-        border: Border.all(
-          color: theme.dividerColor.withOpacity(0.2),
+        color: theme.cardColor.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(20),
+        border: GradientBoxBorder(
+          gradient: LinearGradient(
+            colors: [
+              Colors.black.withOpacity(0.3),
+              Colors.black.withOpacity(0.1),
+            ],
+          ),
           width: 1,
         ),
       ),
@@ -55,7 +61,7 @@ class _FeedSearchBarState extends State<FeedSearchBar> {
         focusNode: _focusNode,
         style: TextStyle(
           color: theme.textTheme.bodyLarge?.color ?? Colors.white,
-          fontSize: 14, // Match button text size
+          fontSize: 14,
         ),
         cursorColor: theme.primaryColor,
         textAlignVertical: TextAlignVertical.center,
@@ -65,7 +71,7 @@ class _FeedSearchBarState extends State<FeedSearchBar> {
           hintText: widget.filterType.searchPlaceholder,
           hintStyle: TextStyle(
             color: theme.textTheme.bodyLarge?.color?.withOpacity(0.5) ?? Colors.white.withOpacity(0.5),
-            fontSize: 14, // Match button text size
+            fontSize: 14,
           ),
           prefixIcon: Icon(
             widget.filterType.icon,
