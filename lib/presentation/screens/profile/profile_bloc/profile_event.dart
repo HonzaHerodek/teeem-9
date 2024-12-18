@@ -1,12 +1,9 @@
-import 'package:equatable/equatable.dart';
-import '../../../../data/models/targeting_model.dart';
-import '../../../../data/models/trait_model.dart';
+import 'package:flutter/foundation.dart';
+import '../../../../data/models/traits/user_trait_model.dart';
 
-abstract class ProfileEvent extends Equatable {
+@immutable
+abstract class ProfileEvent {
   const ProfileEvent();
-
-  @override
-  List<Object?> get props => [];
 }
 
 class ProfileStarted extends ProfileEvent {
@@ -21,57 +18,22 @@ class ProfilePostsRequested extends ProfileEvent {
   const ProfilePostsRequested();
 }
 
-class ProfileSettingsUpdated extends ProfileEvent {
-  final Map<String, dynamic> settings;
+class ProfileTraitAdded extends ProfileEvent {
+  final UserTraitModel trait;
 
-  const ProfileSettingsUpdated(this.settings);
-
-  @override
-  List<Object?> get props => [settings];
-}
-
-class ProfileBioUpdated extends ProfileEvent {
-  final String bio;
-
-  const ProfileBioUpdated(this.bio);
-
-  @override
-  List<Object?> get props => [bio];
-}
-
-class ProfileTargetingUpdated extends ProfileEvent {
-  final TargetingCriteria targetingCriteria;
-
-  const ProfileTargetingUpdated(this.targetingCriteria);
-
-  @override
-  List<Object?> get props => [targetingCriteria];
+  const ProfileTraitAdded(this.trait);
 }
 
 class ProfileRatingReceived extends ProfileEvent {
   final double rating;
+  final String userId;
   final String raterId;
 
-  const ProfileRatingReceived(this.rating, this.raterId);
-
-  @override
-  List<Object?> get props => [rating, raterId];
-}
-
-class ProfileTraitAdded extends ProfileEvent {
-  final TraitModel trait;
-
-  const ProfileTraitAdded(this.trait);
-
-  @override
-  List<Object?> get props => [trait];
+  const ProfileRatingReceived(this.rating, this.raterId, {required this.userId});
 }
 
 class ProfilePostUnsaved extends ProfileEvent {
   final String postId;
 
   const ProfilePostUnsaved(this.postId);
-
-  @override
-  List<Object?> get props => [postId];
 }

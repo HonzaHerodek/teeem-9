@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../core/services/trait_service.dart';
-import '../../data/models/trait_model.dart';
+import 'package:get_it/get_it.dart';
+import '../../data/models/traits/trait_type_model.dart';
+import '../../data/models/traits/user_trait_model.dart';
+import '../../domain/repositories/trait_repository.dart';
 
 class AddTraitDialog extends StatefulWidget {
-  final Function(TraitModel) onTraitAdded;
+  final Function(UserTraitModel) onTraitAdded;
 
   const AddTraitDialog({
     Key? key,
@@ -15,67 +17,66 @@ class AddTraitDialog extends StatefulWidget {
 }
 
 class _AddTraitDialogState extends State<AddTraitDialog> {
+  final TraitRepository _traitRepository = GetIt.instance<TraitRepository>();
   String? _selectedCategory;
-  TraitModel? _selectedTrait;
-  final TextEditingController _valueController = TextEditingController();
-  List<TraitModel> _availableTraits = [];
+  TraitTypeModel? _selectedTraitType;
+  String? _selectedValue;
+  List<TraitTypeModel> _traitTypes = [];
+  bool _isLoading = true;
 
   @override
-  void dispose() {
-    _valueController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadTraitTypes();
   }
 
-  void _updateAvailableTraits() {
-    if (_selectedCategory != null) {
-      setState(() {
-        _availableTraits = TraitService.getTraitsForCategory(_selectedCategory!);
-        _selectedTrait = null;
-        _valueController.clear();
-      });
-      debugPrint('Available traits for $_selectedCategory: $_availableTraits'); // Debug log
+  Future<void> _loadTraitTypes() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final traitTypes = await _traitRepository.getTraitTypes();
+      if (mounted) {
+        setState(() {
+          _traitTypes = traitTypes;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading trait types: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  String _generateUniqueId() {
-    return '${_selectedCategory}_${DateTime.now().millisecondsSinceEpoch}';
+  Set<String> get _categories {
+    return _traitTypes.map((t) => t.category).toSet();
+  }
+
+  List<TraitTypeModel> _getTraitTypesForCategory(String category) {
+    return _traitTypes.where((t) => t.category == category).toList();
   }
 
   void _handleTraitAdded() {
-    if (_selectedCategory != null &&
-        _selectedTrait != null &&
-        _valueController.text.isNotEmpty) {
-      debugPrint('Creating new trait...'); // Debug log
-      // Create a new trait with a unique ID
-      final newTrait = TraitModel(
-        id: _generateUniqueId(), // Generate a unique ID
-        name: _selectedTrait!.name,
-        iconData: _selectedTrait!.iconData,
-        value: _valueController.text,
-        category: _selectedCategory!,
-        displayOrder: _selectedTrait!.displayOrder,
+    if (_selectedTraitType != null && _selectedValue != null) {
+      final newTrait = UserTraitModel(
+        id: 'trait_${DateTime.now().millisecondsSinceEpoch}',
+        traitTypeId: _selectedTraitType!.id,
+        value: _selectedValue!,
+        displayOrder: 0, // Will be set by repository
       );
-      debugPrint('New trait created: $newTrait'); // Debug log
       
-      // Ensure the callback is called
-      try {
-        widget.onTraitAdded(newTrait);
-        debugPrint('Trait added callback executed successfully'); // Debug log
-      } catch (e) {
-        debugPrint('Error in trait added callback: $e'); // Error log
-      }
-      
+      widget.onTraitAdded(newTrait);
       Navigator.pop(context);
-    } else {
-      debugPrint('Cannot add trait: missing category, trait, or value'); // Debug log
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final categories = TraitService.getAvailableCategories();
-    debugPrint('Available categories: $categories'); // Debug log
-
     return Dialog(
       backgroundColor: Colors.grey[900],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -94,44 +95,16 @@ class _AddTraitDialogState extends State<AddTraitDialog> {
               ),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedCategory,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                labelStyle: TextStyle(color: Colors.white70),
-                border: OutlineInputBorder(),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white24),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
-                ),
-              ),
-              dropdownColor: Colors.grey[850],
-              style: const TextStyle(color: Colors.white),
-              items: categories.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Text(
-                    category.toUpperCase(),
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                debugPrint('Category selected: $value'); // Debug log
-                setState(() {
-                  _selectedCategory = value;
-                });
-                _updateAvailableTraits();
-              },
-            ),
-            const SizedBox(height: 16),
-            if (_selectedCategory != null) ...[
-              DropdownButtonFormField<TraitModel>(
-                value: _selectedTrait,
+            if (_isLoading)
+              const Center(
+                child: CircularProgressIndicator(),
+              )
+            else ...[
+              // Category Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedCategory,
                 decoration: const InputDecoration(
-                  labelText: 'Trait',
+                  labelText: 'Category',
                   labelStyle: TextStyle(color: Colors.white70),
                   border: OutlineInputBorder(),
                   enabledBorder: OutlineInputBorder(
@@ -143,45 +116,90 @@ class _AddTraitDialogState extends State<AddTraitDialog> {
                 ),
                 dropdownColor: Colors.grey[850],
                 style: const TextStyle(color: Colors.white),
-                items: _availableTraits.map((trait) {
+                items: _categories.map((category) {
                   return DropdownMenuItem(
-                    value: trait,
+                    value: category,
                     child: Text(
-                      trait.name,
+                      category.toUpperCase(),
                       style: const TextStyle(color: Colors.white),
                     ),
                   );
                 }).toList(),
                 onChanged: (value) {
-                  debugPrint('Trait selected: $value'); // Debug log
                   setState(() {
-                    _selectedTrait = value;
-                    if (value != null) {
-                      _valueController.text = value.value;
-                    }
+                    _selectedCategory = value;
+                    _selectedTraitType = null;
+                    _selectedValue = null;
                   });
                 },
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _valueController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: 'Value',
-                  labelStyle: TextStyle(color: Colors.white70),
-                  border: OutlineInputBorder(),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white24),
+              if (_selectedCategory != null) ...[
+                // Trait Type Dropdown
+                DropdownButtonFormField<TraitTypeModel>(
+                  value: _selectedTraitType,
+                  decoration: const InputDecoration(
+                    labelText: 'Trait Type',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    border: OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white24),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
+                  dropdownColor: Colors.grey[850],
+                  style: const TextStyle(color: Colors.white),
+                  items: _getTraitTypesForCategory(_selectedCategory!).map((type) {
+                    return DropdownMenuItem(
+                      value: type,
+                      child: Text(
+                        type.name,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedTraitType = value;
+                      _selectedValue = null;
+                    });
+                  },
                 ),
-                onChanged: (value) {
-                  debugPrint('Value changed: $value'); // Debug log
-                  setState(() {}); // Trigger rebuild to update Add button state
-                },
-              ),
+                const SizedBox(height: 16),
+                if (_selectedTraitType != null)
+                  DropdownButtonFormField<String>(
+                    value: _selectedValue,
+                    decoration: const InputDecoration(
+                      labelText: 'Value',
+                      labelStyle: TextStyle(color: Colors.white70),
+                      border: OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white24),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
+                    ),
+                    dropdownColor: Colors.grey[850],
+                    style: const TextStyle(color: Colors.white),
+                    items: _selectedTraitType!.possibleValues.map((value) {
+                      return DropdownMenuItem(
+                        value: value,
+                        child: Text(
+                          value,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedValue = value;
+                      });
+                    },
+                  ),
+              ],
             ],
             const SizedBox(height: 24),
             Row(
@@ -196,9 +214,7 @@ class _AddTraitDialogState extends State<AddTraitDialog> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: _selectedCategory != null &&
-                          _selectedTrait != null &&
-                          _valueController.text.isNotEmpty
+                  onPressed: _selectedTraitType != null && _selectedValue != null
                       ? _handleTraitAdded
                       : null,
                   style: ElevatedButton.styleFrom(

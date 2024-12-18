@@ -6,7 +6,7 @@ import '../models/user_model.dart';
 import '../models/targeting_model.dart';
 import '../models/rating_model.dart';
 import '../models/trophy_model.dart';
-import '../models/trait_model.dart';
+import '../models/traits/user_trait_model.dart';
 
 @LazySingleton(as: UserRepository)
 class MockUserRepository implements UserRepository {
@@ -38,23 +38,25 @@ class MockUserRepository implements UserRepository {
       ),
     ];
 
-    // Create some test traits
+    // Create some test traits matching trait types from MockTraitRepository
     final testTraits = [
-      const TraitModel(
-        id: 'prog_exp',
-        name: 'Experience',
-        iconData: '0xe8e8',
-        value: '5+ years',
-        category: 'programming',
+      const UserTraitModel(
+        id: 'hair_1',
+        traitTypeId: '1', // Hair Color trait type
+        value: 'Brown',
         displayOrder: 0,
       ),
-      const TraitModel(
-        id: 'prog_lang',
-        name: 'Languages',
-        iconData: '0xe86f',
-        value: 'Flutter, Dart',
-        category: 'programming',
+      const UserTraitModel(
+        id: 'eye_1',
+        traitTypeId: '2', // Eye Color trait type
+        value: 'Blue',
         displayOrder: 1,
+      ),
+      const UserTraitModel(
+        id: 'hobby_1',
+        traitTypeId: '3', // Hobby trait type
+        value: 'Gaming',
+        displayOrder: 2,
       ),
     ];
 
@@ -138,6 +140,7 @@ class MockUserRepository implements UserRepository {
   Future<UserModel?> getUserById(String userId) async {
     await Future.delayed(_delay);
     final user = _users[userId];
+    print('Getting user $userId - traits: ${user?.traits.length}'); // Debug log
     if (user == null) {
       throw NotFoundException('User not found');
     }
@@ -150,8 +153,20 @@ class MockUserRepository implements UserRepository {
     if (!_users.containsKey(user.id)) {
       throw NotFoundException('User not found');
     }
-    print('Updating user with traits: ${user.traits}'); // Debug log
+    
+    // Debug logs
+    print('Updating user:');
+    print('- ID: ${user.id}');
+    print('- Current traits count: ${_users[user.id]?.traits.length}');
+    print('- New traits count: ${user.traits.length}');
+    print('- New traits: ${user.traits.map((t) => '${t.traitTypeId}:${t.value}').join(', ')}');
+    
+    // Update user
     _users[user.id] = user;
+    
+    // Verify the update
+    final updatedUser = _users[user.id];
+    print('Verified user traits after update: ${updatedUser?.traits.length}');
   }
 
   @override

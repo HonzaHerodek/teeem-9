@@ -71,7 +71,7 @@ PostModel _$PostModelFromJson(Map<String, dynamic> json) => PostModel(
           .map((e) => RatingModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       userTraits: (json['userTraits'] as List<dynamic>)
-          .map((e) => TraitModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => UserTraitModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       targetingCriteria: json['targetingCriteria'] == null
           ? null

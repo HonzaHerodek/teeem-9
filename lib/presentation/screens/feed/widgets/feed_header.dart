@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/services/trait_service.dart';
-import '../../../../data/models/trait_model.dart';
+import '../../../../data/models/traits/trait_type_model.dart';
 import '../../../widgets/notifications/notification_icon.dart';
 import '../controllers/feed_header_controller.dart';
 import '../feed_bloc/feed_bloc.dart';
@@ -11,21 +10,23 @@ import 'feed_search_bar.dart';
 import 'filter_chips.dart';
 import 'target_icon.dart';
 
-class TraitChip extends StatelessWidget {
-  final TraitModel trait;
+class TraitTypeChip extends StatelessWidget {
+  final TraitTypeModel traitType;
+  final String selectedValue;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const TraitChip({
+  const TraitTypeChip({
     super.key,
-    required this.trait,
+    required this.traitType,
+    required this.selectedValue,
     required this.isSelected,
     required this.onTap,
   });
 
   IconData? _parseIconData(String iconData) {
     try {
-      final codePoint = int.parse(iconData);
+      final codePoint = int.parse(iconData, radix: 16);
       return IconData(codePoint, fontFamily: 'MaterialIcons');
     } catch (e) {
       return null;
@@ -61,7 +62,7 @@ class TraitChip extends StatelessWidget {
               ),
               child: Center(
                 child: Icon(
-                  _parseIconData(trait.iconData) ?? Icons.star,
+                  _parseIconData(traitType.iconData) ?? Icons.star,
                   color: Colors.white,
                   size: 24,
                 ),
@@ -71,7 +72,7 @@ class TraitChip extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Text(
-                  trait.value,
+                  selectedValue,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -120,9 +121,9 @@ class FeedHeader extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final traits = TraitService.getTraitsForCategory(
-      headerController.state.selectedCategory!
-    );
+    final filteredTraitTypes = headerController.traitTypes
+        .where((t) => t.category == headerController.state.selectedCategory)
+        .toList();
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -131,13 +132,15 @@ class FeedHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(width: 16),
-          ...traits.map((trait) {
+          ...filteredTraitTypes.map((TraitTypeModel traitType) {
+            final String selectedValue = traitType.possibleValues.first; // Default to first value
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: TraitChip(
-                trait: trait,
-                isSelected: trait == headerController.state.selectedTrait,
-                onTap: () => headerController.selectTrait(trait),
+              child: TraitTypeChip(
+                traitType: traitType,
+                selectedValue: selectedValue,
+                isSelected: traitType == headerController.state.selectedTraitType,
+                onTap: () => headerController.selectTraitType(traitType),
               ),
             );
           }).toList(),

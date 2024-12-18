@@ -1,49 +1,49 @@
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-part 'trait_model.g.dart';
+part 'trait_type_model.g.dart';
 
 @immutable
 @JsonSerializable()
-class TraitModel {
+class TraitTypeModel {
   final String id;
   final String name;
   @JsonKey(name: 'icon_data')
   final String iconData;
-  final String value;
-  @JsonKey(defaultValue: '')
   final String category;
+  @JsonKey(defaultValue: [])
+  final List<String> possibleValues;
   @JsonKey(defaultValue: 0)
   final int displayOrder;
 
-  const TraitModel({
+  const TraitTypeModel({
     required this.id,
     required this.name,
     required this.iconData,
-    required this.value,
     required this.category,
+    required this.possibleValues,
     required this.displayOrder,
   });
 
-  factory TraitModel.fromJson(Map<String, dynamic> json) =>
-      _$TraitModelFromJson(json);
+  factory TraitTypeModel.fromJson(Map<String, dynamic> json) =>
+      _$TraitTypeModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$TraitModelToJson(this);
+  Map<String, dynamic> toJson() => _$TraitTypeModelToJson(this);
 
-  TraitModel copyWith({
+  TraitTypeModel copyWith({
     String? id,
     String? name,
     String? iconData,
-    String? value,
     String? category,
+    List<String>? possibleValues,
     int? displayOrder,
   }) {
-    return TraitModel(
+    return TraitTypeModel(
       id: id ?? this.id,
       name: name ?? this.name,
       iconData: iconData ?? this.iconData,
-      value: value ?? this.value,
       category: category ?? this.category,
+      possibleValues: possibleValues ?? this.possibleValues,
       displayOrder: displayOrder ?? this.displayOrder,
     );
   }
@@ -51,13 +51,13 @@ class TraitModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is TraitModel &&
+      other is TraitTypeModel &&
           runtimeType == other.runtimeType &&
           id == other.id &&
           name == other.name &&
           iconData == other.iconData &&
-          value == value &&
           category == category &&
+          possibleValues == possibleValues &&
           displayOrder == displayOrder;
 
   @override
@@ -65,7 +65,7 @@ class TraitModel {
       id.hashCode ^
       name.hashCode ^
       iconData.hashCode ^
-      value.hashCode ^
       category.hashCode ^
+      possibleValues.hashCode ^
       displayOrder.hashCode;
 }

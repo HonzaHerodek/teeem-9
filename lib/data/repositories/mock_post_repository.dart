@@ -8,10 +8,15 @@ class MockPostRepository implements PostRepository {
   final _delay = const Duration(milliseconds: 500);
 
   MockPostRepository() {
-    _initializeTestPosts();
+    _initialize();
   }
 
-  void _initializeTestPosts() {
+  Future<void> _initialize() async {
+    await TestDataService.initialize();
+    await _initializeTestPosts();
+  }
+
+  Future<void> _initializeTestPosts() async {
     _posts.clear();
     // Add test posts first to ensure post_0, post_1, etc. are available
     final testData = TestDataService.generateTestPosts(count: 5);
@@ -27,7 +32,7 @@ class MockPostRepository implements PostRepository {
   Future<List<PostModel>> getPosts({int? limit, String? startAfter, String? userId, List<String>? tags}) async {
     await Future.delayed(_delay);
     if (_posts.isEmpty) {
-      _initializeTestPosts();
+      await _initializeTestPosts();
     }
     return _posts;
   }

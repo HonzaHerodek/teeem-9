@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 import './rating_model.dart';
 import './targeting_model.dart';
-import './trait_model.dart';
+import 'traits/user_trait_model.dart';
 
 part 'post_model.g.dart';
 
@@ -136,7 +136,7 @@ class PostModel {
   @JsonKey(defaultValue: PostStatus.draft)
   final PostStatus status;
   final List<RatingModel> ratings;
-  final List<TraitModel> userTraits;
+  final List<UserTraitModel> userTraits;
   final TargetingCriteria? targetingCriteria;
   final Map<String, dynamic>? aiMetadata;
 
@@ -192,7 +192,7 @@ class PostModel {
     List<String>? comments,
     PostStatus? status,
     List<RatingModel>? ratings,
-    List<TraitModel>? userTraits,
+    List<UserTraitModel>? userTraits,
     TargetingCriteria? targetingCriteria,
     Map<String, dynamic>? aiMetadata,
   }) {

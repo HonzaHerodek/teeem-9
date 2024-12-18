@@ -1,12 +1,48 @@
 import 'package:flutter/material.dart';
-import '../../../../data/models/trait_model.dart';
+import 'package:get_it/get_it.dart';
+import '../../../../data/models/traits/trait_type_model.dart';
+import '../../../../data/models/traits/user_trait_model.dart';
+import '../../../../domain/repositories/trait_repository.dart';
 
-class ProfileNetworkView extends StatelessWidget {
+class ProfileNetworkView extends StatefulWidget {
   const ProfileNetworkView({Key? key}) : super(key: key);
 
-  Widget _buildNetworkBubble(TraitModel trait) {
+  @override
+  State<ProfileNetworkView> createState() => _ProfileNetworkViewState();
+}
+
+class _ProfileNetworkViewState extends State<ProfileNetworkView> {
+  List<TraitTypeModel> _networkTraitTypes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNetworkTraits();
+  }
+
+  Future<void> _loadNetworkTraits() async {
+    final traitTypes = await GetIt.instance<TraitRepository>().getTraitTypes();
+    if (mounted) {
+      setState(() {
+        _networkTraitTypes = traitTypes
+            .where((type) => type.category == 'network')
+            .toList();
+      });
+    }
+  }
+
+  Widget _buildNetworkBubble(TraitTypeModel traitType) {
     const double itemHeight = 40;
     const double itemWidth = 120;
+
+    IconData? _parseIconData(String iconData) {
+      try {
+        final codePoint = int.parse(iconData, radix: 16);
+        return IconData(codePoint, fontFamily: 'MaterialIcons');
+      } catch (e) {
+        return null;
+      }
+    }
 
     return Container(
       width: itemWidth,
@@ -32,7 +68,7 @@ class ProfileNetworkView extends StatelessWidget {
             ),
             child: Center(
               child: Icon(
-                IconData(int.parse(trait.iconData), fontFamily: 'MaterialIcons'),
+                _parseIconData(traitType.iconData) ?? Icons.star,
                 color: Colors.white,
                 size: itemHeight * 0.6,
               ),
@@ -42,7 +78,7 @@ class ProfileNetworkView extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Text(
-                trait.value,
+                traitType.name,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -59,31 +95,12 @@ class ProfileNetworkView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final networkTraits = [
-      TraitModel(
-        id: '1',
-        name: 'Mentors',
-        iconData: '0xe559',
-        value: 'Mentors',
-        category: 'network',
-        displayOrder: 0,
-      ),
-      TraitModel(
-        id: '2',
-        name: 'Peers',
-        iconData: '0xe7ef',
-        value: 'Peers',
-        category: 'network',
-        displayOrder: 1,
-      ),
-    ];
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const ClampingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        children: networkTraits.map(_buildNetworkBubble).toList(),
+        children: _networkTraitTypes.map(_buildNetworkBubble).toList(),
       ),
     );
   }

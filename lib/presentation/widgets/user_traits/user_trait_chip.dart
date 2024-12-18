@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../data/models/trait_model.dart';
+import '../../../data/models/traits/trait_type_model.dart';
+import '../../../data/models/traits/user_trait_model.dart';
 
-class UserTraits extends StatelessWidget {
-  final List<TraitModel> traits;
+class UserTraitChip extends StatelessWidget {
+  final UserTraitModel trait;
+  final TraitTypeModel traitType;
+  final double width;
   final double height;
-  final double itemWidth;
-  final double itemHeight;
   final double spacing;
 
-  const UserTraits({
+  const UserTraitChip({
     super.key,
-    required this.traits,
-    this.height = 120,
-    this.itemWidth = 120,
-    this.itemHeight = 40,
-    this.spacing = 8,
+    required this.trait,
+    required this.traitType,
+    required this.width,
+    required this.height,
+    required this.spacing,
   });
 
   IconData? _parseIconData(String iconData) {
@@ -26,14 +27,15 @@ class UserTraits extends StatelessWidget {
     }
   }
 
-  Widget _buildTraitBubble(TraitModel trait) {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: itemWidth,
-      height: itemHeight,
+      width: width,
+      height: height,
       margin: EdgeInsets.symmetric(horizontal: spacing / 2),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(itemHeight / 2),
+        borderRadius: BorderRadius.circular(height / 2),
         border: Border.all(
           color: Colors.white.withOpacity(0.2),
           width: 1,
@@ -43,17 +45,17 @@ class UserTraits extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Container(
-            width: itemHeight,
-            height: itemHeight,
+            width: height,
+            height: height,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(itemHeight / 2),
+              borderRadius: BorderRadius.circular(height / 2),
             ),
             child: Center(
               child: Icon(
-                _parseIconData(trait.iconData) ?? Icons.star,
+                _parseIconData(traitType.iconData) ?? Icons.star,
                 color: Colors.white,
-                size: itemHeight * 0.6,
+                size: height * 0.6,
               ),
             ),
           ),
@@ -72,26 +74,6 @@ class UserTraits extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: itemHeight,
-      child: NotificationListener<OverscrollIndicatorNotification>(
-        onNotification: (overscroll) {
-          overscroll.disallowIndicator();
-          return true;
-        },
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: traits.length,
-          itemBuilder: (context, index) => _buildTraitBubble(traits[index]),
-        ),
       ),
     );
   }

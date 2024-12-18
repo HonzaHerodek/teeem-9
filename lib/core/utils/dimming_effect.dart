@@ -5,19 +5,19 @@ import 'package:flutter/material.dart';
 class DimmingConfig {
   /// The color used for dimming the screen
   final Color dimmingColor;
-  
+
   /// The opacity of the dimming effect (0.0 to 1.0)
   final double dimmingStrength;
-  
+
   /// The color of the glow effect for excluded elements
   final Color glowColor;
-  
+
   /// The spread radius of the glow effect
   final double glowSpread;
-  
+
   /// The blur radius of the glow effect
   final double glowBlur;
-  
+
   /// The strength of the glow effect (0.0 to 1.0)
   final double glowStrength;
 
@@ -35,16 +35,16 @@ class DimmingConfig {
 class DimmingOverlay extends StatelessWidget {
   /// The child widget to be potentially dimmed
   final Widget child;
-  
+
   /// Whether the dimming effect is currently active
   final bool isDimmed;
-  
+
   /// Configuration for the dimming effect
   final DimmingConfig config;
-  
+
   /// List of global keys for widgets that should be excluded from dimming
   final List<GlobalKey> excludedKeys;
-  
+
   /// Optional offset from where the dimming effect should originate
   final Offset? source;
 
@@ -65,36 +65,36 @@ class DimmingOverlay extends StatelessWidget {
     return Stack(
       children: [
         child,
-          IgnorePointer(
-            ignoring: !isDimmed,
-            child: AnimatedOpacity(
-              opacity: isDimmed ? 1.0 : 0.0,
-              duration: _animationDuration,
-              curve: _animationCurve,
-              child: _buildDimmingLayer(context),
-            ),
+        IgnorePointer(
+          ignoring: !isDimmed,
+          child: AnimatedOpacity(
+            opacity: isDimmed ? 1.0 : 0.0,
+            duration: _animationDuration,
+            curve: _animationCurve,
+            child: _buildDimmingLayer(context),
           ),
+        ),
       ],
     );
   }
 
   Widget _buildDimmingLayer(BuildContext context) {
-    return Positioned.fill(
-      child: Stack(
-        children: [
-          // Base dimming layer
-          Container(
-            color: config.dimmingColor.withOpacity(config.dimmingStrength),
-          ),
-          // Excluded elements with glow
-          ...excludedKeys.map((key) => _buildExcludedElement(key, context)),
-        ],
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Base dimming layer
+        Container(
+          color: config.dimmingColor.withOpacity(config.dimmingStrength),
+        ),
+        // Excluded elements with glow
+        ...excludedKeys.map((key) => _buildExcludedElement(key, context)),
+      ],
     );
   }
 
   Widget _buildExcludedElement(GlobalKey key, BuildContext context) {
-    final RenderBox? renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? renderBox =
+        key.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return const SizedBox.shrink();
 
     final position = renderBox.localToGlobal(Offset.zero);
@@ -117,7 +117,8 @@ class DimmingOverlay extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: config.glowColor.withOpacity(isDimmed ? config.glowStrength : 0.0),
+                color: config.glowColor
+                    .withOpacity(isDimmed ? config.glowStrength : 0.0),
                 blurRadius: config.glowBlur * 2,
                 spreadRadius: config.glowSpread,
               ),

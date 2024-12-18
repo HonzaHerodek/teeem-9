@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' show lerpDouble;
 import '../../data/models/post_model.dart';
-import '../../data/models/trait_model.dart';
+import '../../data/models/traits/user_trait_model.dart';
 import '../../domain/repositories/post_repository.dart';
 import '../../core/di/injection.dart';
 import 'common/animated_profile_picture.dart';
@@ -10,7 +10,6 @@ import 'mixins/expandable_content_mixin.dart';
 import 'constants/post_widget_constants.dart';
 import 'rating_stars.dart';
 import 'rating_count_star.dart';
-import 'user_traits.dart';
 
 class PostHeader extends StatefulWidget {
   final String username;
@@ -22,7 +21,7 @@ class PostHeader extends StatefulWidget {
   final String userId;
   final String currentPostId;
   final Function(double)? onAnimationChanged;
-  final List<TraitModel> userTraits;
+  final List<UserTraitModel> userTraits;
   final double rating;
 
   const PostHeader({
@@ -155,12 +154,39 @@ class _PostHeaderState extends State<PostHeader>
           const SizedBox(height: 16),
         ],
         if (widget.userTraits.isNotEmpty)
-          UserTraits(
-            traits: widget.userTraits,
+          SizedBox(
             height: 40,
-            itemWidth: 100,
-            itemHeight: 40,
-            spacing: 8,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: widget.userTraits.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final trait = widget.userTraits[index];
+                return Container(
+                  width: 100,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      trait.value,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         const SizedBox(height: 16),
         if (_otherPosts != null && _otherPosts!.isNotEmpty)

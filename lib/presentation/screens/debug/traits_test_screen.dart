@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/post_model.dart';
-import '../../../data/models/trait_model.dart';
+import '../../../data/models/traits/user_trait_model.dart';
 import '../../widgets/post_card.dart';
 
 class TraitsTestScreen extends StatelessWidget {
@@ -23,37 +23,23 @@ class TraitsTestScreen extends StatelessWidget {
       status: PostStatus.active,
       ratings: [],
       userTraits: [
-        TraitModel(
-          id: 'exp',
-          name: 'Experience',
-          iconData: '0xe25a',
-          value: '10+ years',
-          category: '',
+        const UserTraitModel(
+          id: 'exp_1',
+          traitTypeId: '1',
+          value: 'Brown',
           displayOrder: 0,
         ),
-        TraitModel(
-          id: 'spec',
-          name: 'Specialty',
-          iconData: '0xe4c6',
-          value: 'Flutter Dev',
-          category: '',
-          displayOrder: 0,
+        const UserTraitModel(
+          id: 'eye_1',
+          traitTypeId: '2',
+          value: 'Blue',
+          displayOrder: 1,
         ),
-        TraitModel(
-          id: 'cert',
-          name: 'Certification',
-          iconData: '0xe8e8',
-          value: 'Google Dev',
-          category: '',
-          displayOrder: 0,
-        ),
-        TraitModel(
-          id: 'focus',
-          name: 'Focus',
-          iconData: '0xe3e7',
-          value: 'Mobile Apps',
-          category: '',
-          displayOrder: 0,
+        const UserTraitModel(
+          id: 'hobby_1',
+          traitTypeId: '3',
+          value: 'Gaming',
+          displayOrder: 2,
         ),
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/services/trait_service.dart';
-import '../../../../data/models/trait_model.dart';
+import 'package:get_it/get_it.dart';
+import '../../../../data/models/traits/trait_type_model.dart';
+import '../../../../domain/repositories/trait_repository.dart';
 import '../models/filter_type.dart';
 
 class FeedHeaderState {
@@ -9,7 +10,7 @@ class FeedHeaderState {
   final bool isFilterMenuOpen;
   final FilterType? activeFilterType;
   final String? selectedCategory;
-  final TraitModel? selectedTrait;
+  final TraitTypeModel? selectedTraitType;
 
   const FeedHeaderState({
     this.isSearchVisible = false,
@@ -17,7 +18,7 @@ class FeedHeaderState {
     this.isFilterMenuOpen = false,
     this.activeFilterType,
     this.selectedCategory,
-    this.selectedTrait,
+    this.selectedTraitType,
   });
 
   FeedHeaderState copyWith({
@@ -26,7 +27,7 @@ class FeedHeaderState {
     bool? isFilterMenuOpen,
     FilterType? activeFilterType,
     String? selectedCategory,
-    TraitModel? selectedTrait,
+    TraitTypeModel? selectedTraitType,
     bool clearFilterType = false,
     bool clearTraits = false,
   }) {
@@ -36,7 +37,7 @@ class FeedHeaderState {
       isFilterMenuOpen: isFilterMenuOpen ?? this.isFilterMenuOpen,
       activeFilterType: clearFilterType ? null : (activeFilterType ?? this.activeFilterType),
       selectedCategory: clearTraits ? null : (selectedCategory ?? this.selectedCategory),
-      selectedTrait: clearTraits ? null : (selectedTrait ?? this.selectedTrait),
+      selectedTraitType: clearTraits ? null : (selectedTraitType ?? this.selectedTraitType),
     );
   }
 }
@@ -48,18 +49,43 @@ class FeedHeaderController extends ChangeNotifier {
   // Add GlobalKey for target icon
   final GlobalKey targetIconKey = GlobalKey();
 
+  final TraitRepository _traitRepository = GetIt.instance<TraitRepository>();
+  List<TraitTypeModel> _traitTypes = [];
+  List<TraitTypeModel> get traitTypes => _traitTypes;
+
+  FeedHeaderController() {
+    _loadTraitTypes();
+  }
+
+  Future<void> _loadTraitTypes() async {
+    try {
+      _traitTypes = await _traitRepository.getTraitTypes();
+      if (_traitTypes.isNotEmpty) {
+        // Set initial category when traits are loaded
+        _state = _state.copyWith(
+          selectedCategory: _traitTypes.first.category,
+        );
+      }
+      notifyListeners();
+    } catch (e) {
+      print('Error loading trait types: $e');
+    }
+  }
+
   void toggleSearch() {
     if (_state.isSearchVisible) {
       closeSearch();
     } else {
-      _state = _state.copyWith(
-        isSearchVisible: true,
-        activeFilterType: FilterType.group,
-        selectedCategory: TraitService.getAvailableCategories().first,
-        isNotificationMenuOpen: false,
-        isFilterMenuOpen: false,
-      );
-      notifyListeners();
+      if (_traitTypes.isNotEmpty) {
+        _state = _state.copyWith(
+          isSearchVisible: true,
+          activeFilterType: FilterType.group,
+          selectedCategory: _traitTypes.first.category,
+          isNotificationMenuOpen: false,
+          isFilterMenuOpen: false,
+        );
+        notifyListeners();
+      }
     }
   }
 
@@ -101,18 +127,19 @@ class FeedHeaderController extends ChangeNotifier {
   }
 
   void selectCategory(String category) {
-    if (TraitService.isValidCategory(category)) {
+    final hasCategory = _traitTypes.any((t) => t.category == category);
+    if (hasCategory) {
       _state = _state.copyWith(
         selectedCategory: category,
-        selectedTrait: null,
+        selectedTraitType: null,
       );
       notifyListeners();
     }
   }
 
-  void selectTrait(TraitModel trait) {
+  void selectTraitType(TraitTypeModel traitType) {
     _state = _state.copyWith(
-      selectedTrait: trait,
+      selectedTraitType: traitType,
     );
     notifyListeners();
   }

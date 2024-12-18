@@ -1,7 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'targeting_model.dart';
 import 'rating_model.dart';
-import 'trait_model.dart';
+import 'traits/user_trait_model.dart';
 
 part 'user_model.g.dart';
 
@@ -21,7 +21,7 @@ class UserModel {
   @JsonKey(defaultValue: [])
   final List<RatingModel> ratings;
   @JsonKey(defaultValue: [])
-  final List<TraitModel> traits;
+  final List<UserTraitModel> traits;
 
   UserModel({
     required this.id,
@@ -36,7 +36,7 @@ class UserModel {
     this.lastActive,
     this.targetingCriteria,
     List<RatingModel>? ratings,
-    List<TraitModel>? traits,
+    List<UserTraitModel>? traits,
   })  : createdAt = createdAt ?? DateTime.now(),
         ratings = ratings ?? const [],
         traits = traits ?? const [];
@@ -66,7 +66,7 @@ class UserModel {
     DateTime? lastActive,
     TargetingCriteria? targetingCriteria,
     List<RatingModel>? ratings,
-    List<TraitModel>? traits,
+    List<UserTraitModel>? traits,
   }) {
     return UserModel(
       id: id ?? this.id,

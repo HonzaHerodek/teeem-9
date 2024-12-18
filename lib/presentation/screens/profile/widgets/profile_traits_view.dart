@@ -1,141 +1,41 @@
 import 'package:flutter/material.dart';
-import '../../../../data/models/trait_model.dart';
-import '../../../widgets/add_trait_dialog.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/di/injection.dart';
+import '../../../../domain/repositories/trait_repository.dart';
+import '../../../bloc/traits/traits_bloc.dart';
+import '../../../bloc/traits/traits_event.dart';
+import '../../../widgets/user_traits/user_traits.dart';
 
 class ProfileTraitsView extends StatelessWidget {
-  final List<TraitModel> traits;
-  final Function(TraitModel) onTraitAdded;
+  final String userId;
   final bool isLoading;
 
   const ProfileTraitsView({
     Key? key,
-    required this.traits,
-    required this.onTraitAdded,
+    required this.userId,
     this.isLoading = false,
   }) : super(key: key);
 
-  Widget _buildTraitBubble(TraitModel trait) {
-    const double itemHeight = 40;
-    const double itemWidth = 120;
-
-    return Container(
-      width: itemWidth,
-      height: itemHeight,
-      margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(itemHeight / 2),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Container(
-            width: itemHeight,
-            height: itemHeight,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(itemHeight / 2),
-            ),
-            child: Center(
-              child: Icon(
-                IconData(int.parse(trait.iconData), fontFamily: 'MaterialIcons'),
-                color: Colors.white,
-                size: itemHeight * 0.6,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                trait.value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddTraitDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AddTraitDialog(
-        onTraitAdded: onTraitAdded,
-      ),
-    );
-  }
-
-  Widget _buildTraitCategory(String category, List<TraitModel> categoryTraits, BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 16, bottom: 4),
-          child: Text(
-            category.toUpperCase(),
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              ...categoryTraits.map(_buildTraitBubble),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                onPressed: () => _showAddTraitDialog(context),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final traitsByCategory = <String, List<TraitModel>>{};
-    for (var trait in traits) {
-      traitsByCategory.putIfAbsent(trait.category, () => []).add(trait);
+    print('ProfileTraitsView build - userId: $userId'); // Debug log
+    
+    if (userId.isEmpty) {
+      print('ProfileTraitsView - Warning: Empty user ID'); // Debug log
+      return const SizedBox.shrink();
     }
 
     return Stack(
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var category in traitsByCategory.keys)
-              _buildTraitCategory(category, traitsByCategory[category]!, context),
-            if (traits.isEmpty)
-              Center(
-                child: TextButton.icon(
-                  onPressed: () => _showAddTraitDialog(context),
-                  icon: const Icon(Icons.add, color: Colors.amber),
-                  label: const Text(
-                    'Add your first trait',
-                    style: TextStyle(color: Colors.amber),
-                  ),
-                ),
-              ),
-          ],
+        BlocProvider(
+          create: (context) {
+            print('Creating TraitsBloc for userId: $userId'); // Debug log
+            final bloc = TraitsBloc(getIt<TraitRepository>());
+            // Immediately load traits
+            bloc.add(LoadTraits(userId));
+            return bloc;
+          },
+          child: UserTraits(userId: userId),
         ),
         if (isLoading)
           Container(

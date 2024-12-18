@@ -69,38 +69,38 @@ class _ProfileViewState extends State<ProfileView> {
   bool _isAddingTrait = false;
 
   Widget _buildContent(BuildContext context, ProfileState state) {
+    if (state.user == null) {
+      return const SizedBox.shrink();
+    }
+
     if (_showTraits) {
-      return ProfileTraitsView(
-        traits: state.user?.traits ?? [],
-        onTraitAdded: (trait) async {
-          setState(() => _isAddingTrait = true);
-          try {
-            context.read<ProfileBloc>().add(ProfileTraitAdded(trait));
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Added ${trait.name} trait'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to add trait: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          } finally {
-            setState(() => _isAddingTrait = false);
-          }
+      print('ProfileScreen _buildContent - userId: ${state.user!.id}'); // Debug log
+      print('ProfileScreen _buildContent - user: ${state.user}'); // Debug log
+      return WillPopScope(
+        onWillPop: () async {
+          setState(() {
+            _showTraits = false;
+          });
+          return false;
         },
-        isLoading: _isAddingTrait,
+        child: ProfileTraitsView(
+          userId: state.user!.id,
+          isLoading: _isAddingTrait,
+        ),
       );
     } else if (_showNetwork) {
-      return const ProfileNetworkView();
+      return WillPopScope(
+        onWillPop: () async {
+          setState(() {
+            _showNetwork = false;
+          });
+          return false;
+        },
+        child: const ProfileNetworkView(),
+      );
     }
     
-    return const SizedBox.shrink(); // Return empty widget instead of username text
+    return const SizedBox.shrink();
   }
 
   @override
@@ -126,6 +126,7 @@ class _ProfileViewState extends State<ProfileView> {
         }
 
         if (state.user == null) {
+          print('ProfileScreen build - user is null'); // Debug log
           return ErrorView(
             message: state.error ?? 'Failed to load profile',
             onRetry: () {
@@ -133,6 +134,8 @@ class _ProfileViewState extends State<ProfileView> {
             },
           );
         }
+
+        print('ProfileScreen build - user: ${state.user?.id}'); // Debug log
 
         return CustomScrollView(
           slivers: [
@@ -184,7 +187,11 @@ class _ProfileViewState extends State<ProfileView> {
                       },
                       onRate: (rating, post) {
                         context.read<ProfileBloc>().add(
-                              ProfileRatingReceived(rating, state.user!.id),
+                              ProfileRatingReceived(
+                                rating,
+                                state.user!.id,
+                                userId: state.user!.id,
+                              ),
                             );
                       },
                     ),

@@ -33,16 +33,20 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> with TraitManagementM
     Emitter<ProfileState> emit,
   ) async {
     try {
+      print('ProfileBloc - Starting profile load'); // Debug log
       emit(state.copyWith(isLoading: true, error: null));
 
       final currentUser = await userRepository.getCurrentUser();
+      print('ProfileBloc - Current user: ${currentUser?.id}'); // Debug log
       if (currentUser == null) {
         throw AppException('User not found');
       }
 
+      print('ProfileBloc - Loading user data for ID: ${currentUser.id}'); // Debug log
       final userPosts = await postRepository.getPosts(userId: currentUser.id);
       final ratingStats = await ratingService.getUserRatingStats(currentUser.id);
 
+      print('ProfileBloc - User traits count: ${currentUser.traits.length}'); // Debug log
       emit(state.copyWith(
         isLoading: false,
         user: currentUser,
@@ -50,6 +54,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> with TraitManagementM
         ratingStats: ratingStats,
         error: null,
       ));
+      print('ProfileBloc - Profile loaded successfully'); // Debug log
     } catch (e) {
       _logger.e('Error in ProfileBloc._onProfileStarted', error: e);
       emit(state.copyWith(

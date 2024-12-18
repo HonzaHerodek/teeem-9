@@ -36,7 +36,7 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
               .toList() ??
           [],
       traits: (json['traits'] as List<dynamic>?)
-              ?.map((e) => TraitModel.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => UserTraitModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
     );
