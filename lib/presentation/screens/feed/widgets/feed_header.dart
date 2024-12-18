@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/trait_service.dart';
+import '../../../../data/models/trait_model.dart';
 import '../../../widgets/notifications/notification_icon.dart';
 import '../controllers/feed_header_controller.dart';
 import '../feed_bloc/feed_bloc.dart';
@@ -9,74 +11,152 @@ import 'feed_search_bar.dart';
 import 'filter_chips.dart';
 import 'target_icon.dart';
 
-class FeedHeader extends StatefulWidget {
-  const FeedHeader({super.key});
+class TraitChip extends StatelessWidget {
+  final TraitModel trait;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const TraitChip({
+    super.key,
+    required this.trait,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  IconData? _parseIconData(String iconData) {
+    try {
+      final codePoint = int.parse(iconData);
+      return IconData(codePoint, fontFamily: 'MaterialIcons');
+    } catch (e) {
+      return null;
+    }
+  }
 
   @override
-  State<FeedHeader> createState() => _FeedHeaderState();
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 120,
+        height: 40,
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? Colors.white.withOpacity(0.2)
+              : Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Icon(
+                  _parseIconData(trait.iconData) ?? Icons.star,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  trait.value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _FeedHeaderState extends State<FeedHeader> {
-  late final FeedHeaderController _controller;
+class FeedHeader extends StatelessWidget {
+  final FeedHeaderController headerController;
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = FeedHeaderController();
-  }
+  const FeedHeader({
+    super.key,
+    required this.headerController,
+  });
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _handleSearch(String query) {
+  void _handleSearch(BuildContext context, String query) {
     context.read<FeedBloc>().add(FeedSearchChanged(query));
   }
 
-  Widget _buildSearchBar() {
-    if (!_controller.state.isSearchVisible || _controller.state.activeFilterType == null) {
+  Widget _buildSearchBar(BuildContext context) {
+    if (!headerController.state.isSearchVisible || 
+        headerController.state.activeFilterType == null) {
       return const SizedBox.shrink();
     }
 
     return FeedSearchBar(
-      key: ValueKey(_controller.state.activeFilterType),
-      filterType: _controller.state.activeFilterType!,
-      onSearch: _handleSearch,
-      onClose: _controller.closeSearch,
+      key: ValueKey(headerController.state.activeFilterType),
+      filterType: headerController.state.activeFilterType!,
+      onSearch: (query) => _handleSearch(context, query),
+      onClose: headerController.closeSearch,
     );
   }
 
-  Widget _buildChips() {
-    if (!_controller.state.isSearchVisible || _controller.state.activeFilterType == null) {
+  Widget _buildTraitChips() {
+    if (!headerController.state.isSearchVisible || 
+        headerController.state.selectedCategory == null) {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // First row - Regular chips
-        SizedBox(
-          height: 40,
-          child: FilterChipGroup(
-            filterTypes: FilterType.values.where((t) => t != FilterType.none).toList(),
-            selectedFilter: _controller.state.activeFilterType!,
-            onFilterSelected: _controller.selectFilter,
-          ),
-        ),
-        const SizedBox(height: 8), // Spacing between rows
-        // Second row - Circular chips
-        SizedBox(
-          height: 40,
-          child: FilterChipGroup(
-            filterTypes: FilterType.values.where((t) => t != FilterType.none).toList(),
-            selectedFilter: _controller.state.activeFilterType!,
-            onFilterSelected: _controller.selectFilter,
-            circular: true,
-          ),
-        ),
-      ],
+    final traits = TraitService.getTraitsForCategory(
+      headerController.state.selectedCategory!
+    );
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const ClampingScrollPhysics(),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(width: 16),
+          ...traits.map((trait) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TraitChip(
+                trait: trait,
+                isSelected: trait == headerController.state.selectedTrait,
+                onTap: () => headerController.selectTrait(trait),
+              ),
+            );
+          }).toList(),
+          const SizedBox(width: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChips() {
+    if (!headerController.state.isSearchVisible || 
+        headerController.state.activeFilterType == null) {
+      return const SizedBox.shrink();
+    }
+
+    return FilterChipGroup(
+      filterTypes: FilterType.values.where((t) => t != FilterType.none).toList(),
+      selectedFilter: headerController.state.activeFilterType!,
+      onFilterSelected: headerController.selectFilter,
     );
   }
 
@@ -90,7 +170,7 @@ class _FeedHeaderState extends State<FeedHeader> {
       child: Container(
         padding: EdgeInsets.only(top: topPadding),
         child: ListenableBuilder(
-          listenable: _controller,
+          listenable: headerController,
           builder: (context, _) {
             return Column(
               mainAxisSize: MainAxisSize.min,
@@ -107,8 +187,8 @@ class _FeedHeaderState extends State<FeedHeader> {
                         child: Center(
                           child: NotificationIcon(
                             notificationCount: 0,
-                            onTap: _controller.toggleNotificationMenu,
-                            isActive: _controller.state.isNotificationMenuOpen,
+                            onTap: headerController.toggleNotificationMenu,
+                            isActive: headerController.state.isNotificationMenuOpen,
                           ),
                         ),
                       ),
@@ -130,7 +210,7 @@ class _FeedHeaderState extends State<FeedHeader> {
                             },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: _buildSearchBar(),
+                              child: _buildSearchBar(context),
                             ),
                           ),
                         ),
@@ -141,8 +221,9 @@ class _FeedHeaderState extends State<FeedHeader> {
                         width: 56,
                         child: Center(
                           child: TargetIcon(
-                            onTap: _controller.toggleSearch,
-                            isActive: _controller.state.isSearchVisible,
+                            key: headerController.targetIconKey,
+                            onTap: headerController.toggleSearch,
+                            isActive: headerController.state.isSearchVisible,
                           ),
                         ),
                       ),
@@ -164,7 +245,22 @@ class _FeedHeaderState extends State<FeedHeader> {
                       ),
                     );
                   },
-                  child: _buildChips(),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // First row - Trait chips
+                      SizedBox(
+                        height: 40,
+                        child: _buildTraitChips(),
+                      ),
+                      const SizedBox(height: 8), // Spacing between rows
+                      // Second row - Filter chips
+                      SizedBox(
+                        height: 40,
+                        child: _buildFilterChips(),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             );

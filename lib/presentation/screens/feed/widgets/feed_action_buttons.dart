@@ -5,12 +5,14 @@ class FeedActionButtons extends StatelessWidget {
   final bool isCreatingPost;
   final VoidCallback onProfileTap;
   final VoidCallback onActionButtonTap;
+  final GlobalKey? plusActionButtonKey;
 
   const FeedActionButtons({
     super.key,
     required this.isCreatingPost,
     required this.onProfileTap,
     required this.onActionButtonTap,
+    this.plusActionButtonKey,
   });
 
   @override
@@ -30,10 +32,11 @@ class FeedActionButtons extends StatelessWidget {
               strokeWidth: 1.5,
             ),
             CircularActionButton(
+              key: plusActionButtonKey,
               icon: isCreatingPost ? Icons.check : Icons.add,
               onPressed: onActionButtonTap,
               isBold: true,
-              strokeWidth: 4.0, // Increased from 3.0 to 4.0
+              strokeWidth: 4.0,
             ),
           ],
         ),

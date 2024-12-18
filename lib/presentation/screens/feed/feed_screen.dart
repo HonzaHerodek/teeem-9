@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/di/injection.dart';
+import '../../../core/utils/dimming_effect.dart';
 import '../../../domain/repositories/auth_repository.dart';
 import '../../../domain/repositories/post_repository.dart';
 import '../../../domain/repositories/project_repository.dart';
@@ -17,6 +18,7 @@ import 'services/filter_service.dart';
 import 'widgets/feed_header.dart';
 import 'widgets/feed_content.dart';
 import 'widgets/feed_action_buttons.dart';
+import 'controllers/feed_header_controller.dart';
 
 class FeedScreen extends StatelessWidget {
   const FeedScreen({super.key});
@@ -43,23 +45,54 @@ class FeedView extends StatefulWidget {
   State<FeedView> createState() => _FeedViewState();
 }
 
-class _FeedViewState extends State<FeedView> {
+class _FeedViewState extends State<FeedView> with DimmingController<FeedView> {
   bool _isProfileOpen = false;
   bool _isCreatingPost = false;
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<InFeedPostCreationState> _postCreationKey =
       GlobalKey<InFeedPostCreationState>();
+  final GlobalKey _plusActionButtonKey = GlobalKey();
+  late final FeedHeaderController _headerController;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _headerController = FeedHeaderController();
+    _headerController.addListener(_updateDimming);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _headerController.removeListener(_updateDimming);
+    _headerController.dispose();
     super.dispose();
+  }
+
+  void _updateDimming() {
+    final RenderBox? targetBox = 
+        _headerController.targetIconKey.currentContext?.findRenderObject() as RenderBox?;
+    final Offset? targetPosition = targetBox?.localToGlobal(Offset.zero);
+    
+    setDimming(
+      isDimmed: _headerController.state.isSearchVisible || _isProfileOpen,
+      excludedKeys: [
+        _plusActionButtonKey,
+        if (_headerController.state.isSearchVisible) _headerController.targetIconKey,
+      ],
+      source: _headerController.state.isSearchVisible && targetPosition != null 
+          ? targetPosition + Offset(targetBox!.size.width / 2, targetBox.size.height / 2)
+          : null,
+      config: const DimmingConfig(
+        dimmingColor: Colors.black,
+        dimmingStrength: 0.7,
+        glowColor: Colors.blue,
+        glowSpread: 8.0,
+        glowBlur: 16.0,
+        glowStrength: 0.4,
+      ),
+    );
   }
 
   void _onScroll() {
@@ -75,6 +108,7 @@ class _FeedViewState extends State<FeedView> {
   void _toggleProfile() {
     setState(() {
       _isProfileOpen = !_isProfileOpen;
+      _updateDimming();
     });
   }
 
@@ -129,7 +163,7 @@ class _FeedViewState extends State<FeedView> {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
     const headerBaseHeight = 64.0;
-    const chipsHeight = 96.0; // Increased to account for two rows of chips (40 + 8 + 40 + 8)
+    const chipsHeight = 96.0;
 
     return Scaffold(
       body: Stack(
@@ -176,16 +210,19 @@ class _FeedViewState extends State<FeedView> {
                 return const SizedBox.shrink();
               },
             ),
+          ).withDimming(
+            isDimmed: isDimmed,
+            config: dimmingConfig,
+            excludedKeys: excludedKeys,
+            source: dimmingSource,
           ),
           // Header (on top)
-          const Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: FeedHeader(),
+          FeedHeader(
+            headerController: _headerController,
           ),
           // Action Buttons
           FeedActionButtons(
+            plusActionButtonKey: _plusActionButtonKey,
             isCreatingPost: _isCreatingPost,
             onProfileTap: _toggleProfile,
             onActionButtonTap: _handleActionButton,

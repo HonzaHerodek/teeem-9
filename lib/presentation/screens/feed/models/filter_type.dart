@@ -20,16 +20,7 @@ enum FilterType {
   }
 
   String get searchPlaceholder {
-    switch (this) {
-      case FilterType.group:
-        return 'Search in groups...';
-      case FilterType.pair:
-        return 'Search in pairs...';
-      case FilterType.self:
-        return 'Search in my posts...';
-      case FilterType.none:
-        return 'Search...';
-    }
+    return 'Describe task, people, etc. to search';
   }
 
   IconData get icon {
