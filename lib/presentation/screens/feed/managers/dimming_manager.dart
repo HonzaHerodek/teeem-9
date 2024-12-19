@@ -6,6 +6,7 @@ import '../controllers/feed_header_controller.dart';
 class DimmingManager {
   final FeedHeaderController headerController;
   final GlobalKey plusActionButtonKey;
+  final GlobalKey profileButtonKey;
   final Function(
       {required bool isDimmed,
       required List<GlobalKey> excludedKeys,
@@ -15,6 +16,7 @@ class DimmingManager {
   const DimmingManager({
     required this.headerController,
     required this.plusActionButtonKey,
+    required this.profileButtonKey,
     required this.onDimmingUpdate,
   });
 
@@ -59,10 +61,13 @@ class DimmingManager {
     final keys = [
       plusActionButtonKey,
       if (isSearchVisible) headerController.targetIconKey,
+      // Exclude profile button for profile notifications
+      if (selectedNotification?.type == NotificationType.profile) profileButtonKey,
     ];
 
     if (selectedItemKey != null && 
         selectedNotification != null && 
+        selectedNotification.type != NotificationType.profile &&
         selectedItemKey.currentContext?.findRenderObject() != null) {
       keys.add(selectedItemKey);
     }

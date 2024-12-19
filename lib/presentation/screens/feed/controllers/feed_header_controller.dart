@@ -4,6 +4,7 @@ import '../../../../data/models/traits/trait_type_model.dart';
 import '../../../../data/repositories/mock_notification_repository.dart';
 import '../../../../data/repositories/mock_trait_repository.dart';
 import '../models/filter_type.dart';
+import '../controllers/feed_controller.dart';
 
 class FeedHeaderState {
   final bool isSearchVisible;
@@ -41,12 +42,18 @@ class FeedHeaderState {
   }) {
     return FeedHeaderState(
       isSearchVisible: isSearchVisible ?? this.isSearchVisible,
-      isNotificationMenuOpen: isNotificationMenuOpen ?? this.isNotificationMenuOpen,
+      isNotificationMenuOpen:
+          isNotificationMenuOpen ?? this.isNotificationMenuOpen,
       activeFilterType: activeFilterType ?? this.activeFilterType,
-      selectedTraitType: clearTraitType ? null : (selectedTraitType ?? this.selectedTraitType),
-      selectedTraitValue: clearTraitValue ? null : (selectedTraitValue ?? this.selectedTraitValue),
+      selectedTraitType:
+          clearTraitType ? null : (selectedTraitType ?? this.selectedTraitType),
+      selectedTraitValue: clearTraitValue
+          ? null
+          : (selectedTraitValue ?? this.selectedTraitValue),
       traitTypes: traitTypes ?? this.traitTypes,
-      selectedNotification: clearNotification ? null : (selectedNotification ?? this.selectedNotification),
+      selectedNotification: clearNotification
+          ? null
+          : (selectedNotification ?? this.selectedNotification),
       notifications: notifications ?? this.notifications,
     );
   }
@@ -63,8 +70,9 @@ class FeedHeaderController extends ChangeNotifier {
   FeedHeaderController({
     MockNotificationRepository? notificationRepository,
     MockTraitRepository? traitRepository,
-  }) : _notificationRepository = notificationRepository ?? MockNotificationRepository(),
-       _traitRepository = traitRepository ?? MockTraitRepository() {
+  })  : _notificationRepository =
+            notificationRepository ?? MockNotificationRepository(),
+        _traitRepository = traitRepository ?? MockTraitRepository() {
     _loadNotifications();
     _loadTraitTypes();
   }
@@ -126,12 +134,25 @@ class FeedHeaderController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void selectNotification(NotificationModel notification) {
+  void selectNotification(
+      NotificationModel notification, FeedController? feedController) {
     _notificationRepository.markAsRead(notification.id);
     _state = _state.copyWith(
       selectedNotification: notification,
       isNotificationMenuOpen: true,
     );
+
+    // Scroll to the associated content if it's a post or project notification
+    if (feedController != null &&
+        notification.type != NotificationType.profile) {
+      final itemId = notification.type == NotificationType.post
+          ? notification.postId!
+          : notification.projectId!;
+
+      final isProject = notification.type == NotificationType.project;
+      feedController.moveToItem(itemId, isProject: isProject);
+    }
+
     notifyListeners();
   }
 

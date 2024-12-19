@@ -9,6 +9,8 @@ class UserTraitsList extends StatefulWidget {
   final List<TraitTypeModel> traitTypes;
   final List<UserTraitModel> traits;
   final Function(TraitTypeModel traitType, String value) onTraitSelected;
+  final Function(TraitTypeModel traitType)? onTraitTypeEdit;
+  final Function(UserTraitModel trait)? onTraitValueEdit;
   final double itemHeight;
 
   const UserTraitsList({
@@ -16,6 +18,8 @@ class UserTraitsList extends StatefulWidget {
     required this.traitTypes,
     required this.traits,
     required this.onTraitSelected,
+    this.onTraitTypeEdit,
+    this.onTraitValueEdit,
     this.itemHeight = 35,
   });
 
@@ -86,19 +90,33 @@ class _UserTraitsListState extends State<UserTraitsList> {
         orElse: () => throw Exception('Trait type not found'),
       );
       
-      // Calculate width based on content (type name + value)
-      final textSpan = TextSpan(
-        text: '${traitType.name}: ${trait.value}',
-        style: const TextStyle(fontSize: 14),
+      // Calculate width based on longer of type name or value
+      final typeTextSpan = TextSpan(
+        text: traitType.name,
+        style: const TextStyle(fontSize: 11),
       );
-      final textPainter = TextPainter(
-        text: textSpan,
+      final valueTextSpan = TextSpan(
+        text: trait.value,
+        style: const TextStyle(fontSize: 13),
+      );
+      final typeTextPainter = TextPainter(
+        text: typeTextSpan,
         textDirection: TextDirection.ltr,
       )..layout();
       
+      final valueTextPainter = TextPainter(
+        text: valueTextSpan,
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      // Use the wider of the two texts
+      final textWidth = typeTextPainter.width > valueTextPainter.width 
+          ? typeTextPainter.width 
+          : valueTextPainter.width;
+
       // Add padding and ensure minimum width
       // Icon width (height) + horizontal padding (24) + text width
-      final contentWidth = (widget.itemHeight + 24 + textPainter.width).clamp(minItemWidth, 300.0);
+      final contentWidth = (widget.itemHeight + 24 + textWidth).clamp(minItemWidth, 300.0);
       
       return UserTraitChip(
         trait: trait,
@@ -106,6 +124,10 @@ class _UserTraitsListState extends State<UserTraitsList> {
         width: contentWidth,
         height: widget.itemHeight,
         spacing: spacing,
+        canEditType: true,
+        canEditValue: true,
+        onTraitTypeEdit: widget.onTraitTypeEdit,
+        onTraitValueEdit: widget.onTraitValueEdit,
       );
     }).toList();
 

@@ -6,14 +6,14 @@ class MockNotificationRepository {
       id: '1',
       title: 'New comment on your post',
       type: NotificationType.post,
-      postId: 'post1',
+      postId: 'post_0',
       timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
     ),
     NotificationModel(
       id: '2',
       title: 'Someone liked your project',
       type: NotificationType.project,
-      projectId: 'project1',
+      projectId: '1',  // Updated to match project ID from MockProjectRepository
       timestamp: DateTime.now().subtract(const Duration(hours: 1)),
     ),
     NotificationModel(
@@ -27,7 +27,7 @@ class MockNotificationRepository {
       id: '4',
       title: 'Your post was featured',
       type: NotificationType.post,
-      postId: 'post2',
+      postId: 'post_1',
       timestamp: DateTime.now().subtract(const Duration(hours: 3)),
     ),
   ];

@@ -6,6 +6,7 @@ class FeedActionButtons extends StatelessWidget {
   final VoidCallback onProfileTap;
   final VoidCallback onActionButtonTap;
   final GlobalKey? plusActionButtonKey;
+  final GlobalKey? profileButtonKey;
 
   const FeedActionButtons({
     super.key,
@@ -13,6 +14,7 @@ class FeedActionButtons extends StatelessWidget {
     required this.onProfileTap,
     required this.onActionButtonTap,
     this.plusActionButtonKey,
+    this.profileButtonKey,
   });
 
   @override
@@ -27,6 +29,7 @@ class FeedActionButtons extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             CircularActionButton(
+              key: profileButtonKey,
               icon: Icons.person,
               onPressed: onProfileTap,
               strokeWidth: 1.5,

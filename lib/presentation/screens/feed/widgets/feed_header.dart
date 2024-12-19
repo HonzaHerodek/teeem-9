@@ -67,6 +67,11 @@ class FeedHeader extends StatelessWidget {
             ),
             traitType: traitType,
             isSelected: false,
+            canEditType: false,
+            canEditValue: true,
+            onTraitValueEdit: (trait) {
+              headerController.selectTraitValue(trait.value);
+            },
             onTap: () => headerController.selectTraitType(traitType),
             spacing: 15,
           );
@@ -99,26 +104,36 @@ class FeedHeader extends StatelessWidget {
               possibleValues: const [],
               displayOrder: 0,
             ),
+            canEditType: false,
+            canEditValue: true,
+            onTraitValueEdit: (trait) {
+              headerController.selectTraitValue(trait.value);
+            },
             onTap: () => headerController.selectTraitType(null),
             spacing: 15,
           );
         }
         
         final value = selectedType.possibleValues[index - 1];
-        return UserTraitChip(
-          trait: UserTraitModel(
-            id: selectedType.id,
-            traitTypeId: selectedType.id,
-            value: value,
-            displayOrder: 0,
-          ),
-          traitType: selectedType,
-          isSelected: false,
-          onTap: () {
-            // Handle value selection
-            headerController.selectTraitValue(value);
-          },
-          spacing: 15,
+          return UserTraitChip(
+            trait: UserTraitModel(
+              id: selectedType.id,
+              traitTypeId: selectedType.id,
+              value: value,
+              displayOrder: 0,
+            ),
+            traitType: selectedType,
+            isSelected: false,
+            canEditType: false,
+            canEditValue: true,
+            onTraitValueEdit: (trait) {
+              headerController.selectTraitValue(trait.value);
+            },
+            onTap: () {
+              // Handle value selection
+              headerController.selectTraitValue(value);
+            },
+            spacing: 15,
         );
       },
     );

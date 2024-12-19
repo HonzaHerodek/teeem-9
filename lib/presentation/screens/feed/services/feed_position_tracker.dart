@@ -53,10 +53,22 @@ class FeedPositionTracker extends ChangeNotifier {
     notifyListeners();
   }
 
+  double _topPadding = 0;
+
+  void setTopPadding(double padding) {
+    _topPadding = padding;
+  }
+
   Future<void> scrollToIndex(int index) async {
-    final targetOffset = index * 400.0; // Approximate height of each item
+    // Account for top padding and use a more reasonable item height
+    final targetOffset = _topPadding + (index * 200.0); // Using 200.0 as average item height
+    
+    // Ensure we don't scroll beyond content
+    final maxScroll = scrollController.position.maxScrollExtent;
+    final safeOffset = targetOffset.clamp(0.0, maxScroll);
+    
     await scrollController.animateTo(
-      targetOffset,
+      safeOffset,
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );

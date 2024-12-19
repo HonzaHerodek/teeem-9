@@ -10,6 +10,8 @@ import '../services/feed_position_tracker.dart';
 import '../services/feed_item_service.dart';
 import '../controllers/feed_controller.dart';
 import '../feed_bloc/feed_bloc.dart';
+import '../feed_bloc/feed_state.dart';
+import '../../../../data/models/notification_model.dart';
 import '../managers/dimming_manager.dart';
 import 'feed_action_buttons.dart';
 import 'feed_header.dart';
@@ -34,6 +36,7 @@ class _FeedViewState extends State<FeedView> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<InFeedPostCreationState> _postCreationKey = GlobalKey();
   final GlobalKey _plusActionButtonKey = GlobalKey();
+  final GlobalKey _profileButtonKey = GlobalKey();
   GlobalKey? _selectedItemKey;
   
   late final FeedHeaderController _headerController;
@@ -46,21 +49,39 @@ class _FeedViewState extends State<FeedView> {
     super.initState();
     _headerController = FeedHeaderController();
     _positionTracker = FeedPositionTracker(scrollController: _scrollController);
+    // Set initial padding
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final topPadding = MediaQuery.of(context).padding.top;
+      const headerBaseHeight = 64.0;
+      const chipsHeight = 96.0;
+      _positionTracker.setTopPadding(topPadding + headerBaseHeight + chipsHeight);
+    });
     final feedBloc = context.read<FeedBloc>();
     _feedController = FeedController(
       feedBloc: feedBloc,
       positionTracker: _positionTracker,
       context: context,
-      itemService: FeedItemService(
-        posts: const [],
-        projects: const [],
-        isCreatingPost: false,
-      ),
     );
+
+    // Listen to feed state changes to handle scrolling when content is loaded
+    feedBloc.stream.listen((state) {
+      if (state is FeedSuccess) {
+        final notification = _headerController.selectedNotification;
+        if (notification != null && notification.type != NotificationType.profile) {
+          final itemId = notification.type == NotificationType.post 
+              ? notification.postId! 
+              : notification.projectId!;
+          
+          final isProject = notification.type == NotificationType.project;
+          _feedController.moveToItem(itemId, isProject: isProject);
+        }
+      }
+    });
     
     _dimmingManager = DimmingManager(
       headerController: _headerController,
       plusActionButtonKey: _plusActionButtonKey,
+      profileButtonKey: _profileButtonKey,
       onDimmingUpdate: ({
         required bool isDimmed,
         required List<GlobalKey> excludedKeys,
@@ -205,6 +226,7 @@ class _FeedViewState extends State<FeedView> {
               FeedHeader(headerController: _headerController),
               FeedNotificationOverlay(
                 headerController: _headerController,
+                feedController: _feedController,
                 topPadding: topPadding,
                 headerHeight: headerBaseHeight,
               ),
@@ -212,6 +234,7 @@ class _FeedViewState extends State<FeedView> {
           ),
           FeedActionButtons(
             plusActionButtonKey: _plusActionButtonKey,
+            profileButtonKey: _profileButtonKey,
             isCreatingPost: _isCreatingPost,
             onProfileTap: _toggleProfile,
             onActionButtonTap: _handleActionButton,

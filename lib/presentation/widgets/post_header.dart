@@ -174,6 +174,8 @@ class _PostHeaderState extends State<PostHeader>
                   trait: trait,
                   traitType: traitType,
                   spacing: 15,
+                  canEditType: false,
+                  canEditValue: false,
                 );
               },
             ),

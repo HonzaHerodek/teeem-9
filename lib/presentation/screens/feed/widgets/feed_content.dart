@@ -40,11 +40,16 @@ class FeedContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final itemService = FeedItemService(
-      posts: posts,
-      projects: projects,
-      isCreatingPost: isCreatingPost,
+    // Update the feed controller's item service with current data
+    feedController.updateItemService(
+      FeedItemService(
+        posts: posts,
+        projects: projects,
+        isCreatingPost: isCreatingPost,
+      )
     );
+
+    final itemService = feedController.itemService;
 
     if (posts.isEmpty && projects.isEmpty && !isCreatingPost) {
       return _buildEmptyState(context);
