@@ -16,7 +16,7 @@ class UserTraitsList extends StatefulWidget {
     required this.traitTypes,
     required this.traits,
     required this.onTraitSelected,
-    this.itemHeight = 40,
+    this.itemHeight = 35,
   });
 
   @override
@@ -47,7 +47,7 @@ class _UserTraitsListState extends State<UserTraitsList> {
 
   Widget _buildSearchButton() {
     return Container(
-      margin: const EdgeInsets.only(right: 4),
+      margin: const EdgeInsets.only(right: 15),
       constraints: const BoxConstraints(
         minWidth: 48,
         maxWidth: 260,
@@ -61,7 +61,7 @@ class _UserTraitsListState extends State<UserTraitsList> {
 
   Widget _buildAddTraitButton() {
     return Container(
-      margin: const EdgeInsets.only(right: 4),
+      margin: const EdgeInsets.only(right: 15),
       constraints: const BoxConstraints(
         minWidth: 48,
         maxWidth: 260,
@@ -75,59 +75,78 @@ class _UserTraitsListState extends State<UserTraitsList> {
   }
 
   List<List<Widget>> _organizeTraitsInRows(BoxConstraints constraints) {
-    final minItemWidth = 80.0;
-    final maxItemWidth = 120.0;
-    final spacing = 4.0;
+    final spacing = 15.0;
     final buttonWidth = 48.0 + spacing;
-    final itemWidth = maxItemWidth.clamp(minItemWidth, maxItemWidth);
-
-    // Create trait widgets
+    final minItemWidth = 80.0;
+    
+    // Create trait widgets with dynamic widths based on content
     final traitWidgets = _filteredTraits.map((trait) {
       final traitType = widget.traitTypes.firstWhere(
         (t) => t.id == trait.traitTypeId,
         orElse: () => throw Exception('Trait type not found'),
       );
-
+      
+      // Calculate width based on content (type name + value)
+      final textSpan = TextSpan(
+        text: '${traitType.name}: ${trait.value}',
+        style: const TextStyle(fontSize: 14),
+      );
+      final textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      
+      // Add padding and ensure minimum width
+      // Icon width (height) + horizontal padding (24) + text width
+      final contentWidth = (widget.itemHeight + 24 + textPainter.width).clamp(minItemWidth, 300.0);
+      
       return UserTraitChip(
         trait: trait,
         traitType: traitType,
-        width: itemWidth,
+        width: contentWidth,
         height: widget.itemHeight,
         spacing: spacing,
       );
     }).toList();
 
-    // Initialize rows for traits
+    // Calculate available widths for each row
+    final firstRowWidth = constraints.maxWidth - buttonWidth;
+    final secondRowWidth = constraints.maxWidth - buttonWidth;
+    final thirdRowWidth = constraints.maxWidth;
+
+    // Initialize rows
     List<List<Widget>> rows = [[], [], []];
-
-    // Calculate how many items can fit in each row
-    final firstRowCapacity =
-        ((constraints.maxWidth - buttonWidth) / (itemWidth + spacing)).floor();
-    final secondRowCapacity =
-        ((constraints.maxWidth - buttonWidth) / (itemWidth + spacing)).floor();
-    final thirdRowCapacity =
-        (constraints.maxWidth / (itemWidth + spacing)).floor();
-
-    // Distribute traits to fill rows from left to right
+    List<double> rowWidths = [0, 0, 0];
     var remainingTraits = [...traitWidgets];
 
-    // Fill first row
-    if (remainingTraits.isNotEmpty) {
-      final count = remainingTraits.length.clamp(0, firstRowCapacity);
-      rows[0].addAll(remainingTraits.take(count));
-      remainingTraits = remainingTraits.skip(count).toList();
+    // Helper function to find best row for next trait
+    int findBestRow(Widget trait) {
+      final traitWidth = trait is UserTraitChip ? (trait.width ?? 0) + spacing : 0;
+      
+      // Check which row has enough space and would be most balanced
+      for (int i = 0; i < 3; i++) {
+        final maxWidth = i < 2 ? 
+          (i == 0 ? firstRowWidth : secondRowWidth) : 
+          thirdRowWidth;
+        
+        if (rowWidths[i] + traitWidth <= maxWidth) {
+          return i;
+        }
+      }
+      
+      // If no row has enough space, find the one with most remaining space
+      return rowWidths.indexOf(rowWidths.reduce((a, b) => a < b ? a : b));
     }
 
-    // Fill second row
-    if (remainingTraits.isNotEmpty) {
-      final count = remainingTraits.length.clamp(0, secondRowCapacity);
-      rows[1].addAll(remainingTraits.take(count));
-      remainingTraits = remainingTraits.skip(count).toList();
-    }
-
-    // Fill third row
-    if (remainingTraits.isNotEmpty) {
-      rows[2].addAll(remainingTraits);
+    // Distribute traits optimally
+    while (remainingTraits.isNotEmpty) {
+      final trait = remainingTraits.removeAt(0);
+      final bestRow = findBestRow(trait);
+      
+      rows[bestRow].add(trait);
+      if (trait is UserTraitChip) {
+        rowWidths[bestRow] += (trait.width ?? 0) + spacing;
+      }
     }
 
     return rows;
@@ -162,16 +181,16 @@ class _UserTraitsListState extends State<UserTraitsList> {
             scrollDirection: Axis.horizontal,
             physics: const ClampingScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.only(left: 4),
+              padding: const EdgeInsets.only(left: 15),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildRow(traitRows[0], _buildSearchButton()),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 9),
                   _buildRow(traitRows[1], _buildAddTraitButton()),
                   if (traitRows[2].isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 9),
                     _buildRow(traitRows[2], null),
                   ],
                 ],

@@ -10,84 +10,8 @@ import 'feed_search_bar.dart';
 import 'filter_chips.dart';
 import 'target_icon.dart';
 
-class TraitTypeChip extends StatelessWidget {
-  final TraitTypeModel traitType;
-  final String selectedValue;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const TraitTypeChip({
-    super.key,
-    required this.traitType,
-    required this.selectedValue,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  IconData? _parseIconData(String iconData) {
-    try {
-      final codePoint = int.parse(iconData, radix: 16);
-      return IconData(codePoint, fontFamily: 'MaterialIcons');
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 120,
-        height: 40,
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? Colors.white.withOpacity(0.2)
-              : Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Center(
-                child: Icon(
-                  _parseIconData(traitType.iconData) ?? Icons.star,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  selectedValue,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+import '../../../../data/models/traits/user_trait_model.dart';
+import '../../../widgets/user_traits/user_trait_chip.dart';
 
 class FeedHeader extends StatelessWidget {
   final FeedHeaderController headerController;
@@ -125,28 +49,27 @@ class FeedHeader extends StatelessWidget {
         .where((t) => t.category == headerController.state.selectedCategory)
         .toList();
 
-    return SingleChildScrollView(
+    return ListView.builder(
       scrollDirection: Axis.horizontal,
       physics: const ClampingScrollPhysics(),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(width: 16),
-          ...filteredTraitTypes.map((TraitTypeModel traitType) {
-            final String selectedValue = traitType.possibleValues.first; // Default to first value
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: TraitTypeChip(
-                traitType: traitType,
-                selectedValue: selectedValue,
-                isSelected: traitType == headerController.state.selectedTraitType,
-                onTap: () => headerController.selectTraitType(traitType),
-              ),
-            );
-          }).toList(),
-          const SizedBox(width: 16),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: filteredTraitTypes.length,
+      itemBuilder: (context, index) {
+        final traitType = filteredTraitTypes[index];
+        final String selectedValue = traitType.possibleValues.first;
+        return UserTraitChip(
+          trait: UserTraitModel(
+            id: traitType.id,
+            traitTypeId: traitType.id,
+            value: selectedValue,
+            displayOrder: 0,
+          ),
+          traitType: traitType,
+          isSelected: traitType == headerController.state.selectedTraitType,
+          onTap: () => headerController.selectTraitType(traitType),
+          spacing: 15,
+        );
+      },
     );
   }
 
@@ -253,13 +176,13 @@ class FeedHeader extends StatelessWidget {
                     children: [
                       // First row - Trait chips
                       SizedBox(
-                        height: 40,
+                        height: 35,
                         child: _buildTraitChips(),
                       ),
-                      const SizedBox(height: 8), // Spacing between rows
+                      const SizedBox(height: 9), // Spacing between rows
                       // Second row - Filter chips
                       SizedBox(
-                        height: 40,
+                        height: 35,
                         child: _buildFilterChips(),
                       ),
                     ],

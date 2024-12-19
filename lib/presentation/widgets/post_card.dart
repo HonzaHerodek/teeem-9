@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/models/post_model.dart';
+import '../../data/models/traits/trait_type_model.dart';
+import '../../domain/repositories/trait_repository.dart';
+import '../../core/di/injection.dart';
 import 'rating_stars.dart';
 import 'post_header.dart';
 import 'step_indicators/step_dots.dart';
@@ -38,10 +41,12 @@ class _PostCardState extends State<PostCard>
   final PageController _pageController = PageController();
   static const double _shrunkHeaderHeight = 60.0;
   double _headerAnimationValue = 0.0;
+  List<TraitTypeModel>? _traitTypes;
 
   @override
   void initState() {
     super.initState();
+    _loadTraitTypes();
     _allSteps = [
       PostStep(
         id: '${widget.post.id}_intro',
@@ -307,6 +312,7 @@ class _PostCardState extends State<PostCard>
                     onExpandChanged: _handleHeaderExpandChange,
                     userId: widget.post.userId,
                     currentPostId: widget.post.id,
+                    traitTypes: _traitTypes ?? [],
                     userTraits: widget.post.userTraits,
                     rating: widget.post.ratingStats.averageRating,
                     onAnimationChanged: (value) {
@@ -344,5 +350,18 @@ class _PostCardState extends State<PostCard>
         ),
       ),
     );
+  }
+
+  Future<void> _loadTraitTypes() async {
+    try {
+      final traitTypes = await getIt<TraitRepository>().getTraitTypes();
+      if (mounted) {
+        setState(() {
+          _traitTypes = traitTypes;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading trait types: $e');
+    }
   }
 }

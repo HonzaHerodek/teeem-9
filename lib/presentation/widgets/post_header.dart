@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' show lerpDouble;
 import '../../data/models/post_model.dart';
+import '../../data/models/traits/trait_type_model.dart';
 import '../../data/models/traits/user_trait_model.dart';
 import '../../domain/repositories/post_repository.dart';
 import '../../core/di/injection.dart';
@@ -10,6 +11,7 @@ import 'mixins/expandable_content_mixin.dart';
 import 'constants/post_widget_constants.dart';
 import 'rating_stars.dart';
 import 'rating_count_star.dart';
+import 'user_traits/user_trait_chip.dart';
 
 class PostHeader extends StatefulWidget {
   final String username;
@@ -21,6 +23,7 @@ class PostHeader extends StatefulWidget {
   final String userId;
   final String currentPostId;
   final Function(double)? onAnimationChanged;
+  final List<TraitTypeModel> traitTypes;
   final List<UserTraitModel> userTraits;
   final double rating;
 
@@ -35,6 +38,7 @@ class PostHeader extends StatefulWidget {
     required this.userId,
     required this.currentPostId,
     this.onAnimationChanged,
+    required this.traitTypes,
     this.userTraits = const [],
     required this.rating,
   });
@@ -155,35 +159,21 @@ class _PostHeaderState extends State<PostHeader>
         ],
         if (widget.userTraits.isNotEmpty)
           SizedBox(
-            height: 40,
-            child: ListView.separated(
+            height: 35,
+            child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: widget.userTraits.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final trait = widget.userTraits[index];
-                return Container(
-                  width: 100,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      trait.value,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+                final traitType = widget.traitTypes
+                    .where((t) => t.id == trait.traitTypeId)
+                    .firstOrNull;
+                if (traitType == null) return const SizedBox.shrink();
+
+                return UserTraitChip(
+                  trait: trait,
+                  traitType: traitType,
+                  spacing: 15,
                 );
               },
             ),
@@ -222,7 +212,8 @@ class _PostHeaderState extends State<PostHeader>
         child: AnimatedBuilder(
           animation: controller,
           builder: (context, child) {
-            final currentHeight = lerpDouble(collapsedHeight, expandedHeight, controller.value)!;
+            final currentHeight =
+                lerpDouble(collapsedHeight, expandedHeight, controller.value)!;
             final borderRadius = lerpDouble(0, postSize / 2, controller.value)!;
 
             return Material(
@@ -271,7 +262,9 @@ class _PostHeaderState extends State<PostHeader>
                         postSize: postSize,
                         animation: controller,
                         isExpanded: widget.isExpanded,
-                        onTap: _canExpand ? () => widget.onExpandChanged(true) : null,
+                        onTap: _canExpand
+                            ? () => widget.onExpandChanged(true)
+                            : null,
                         canExpand: _canExpand,
                         showFullScreenWhenExpanded: true,
                       ),
@@ -281,7 +274,8 @@ class _PostHeaderState extends State<PostHeader>
                         left: 0,
                         right: 0,
                         child: Opacity(
-                          opacity: (controller.value - 0.8).clamp(0.0, 0.2) * 5.0,
+                          opacity:
+                              (controller.value - 0.8).clamp(0.0, 0.2) * 5.0,
                           child: _buildHeaderContent(),
                         ),
                       ),
@@ -293,7 +287,8 @@ class _PostHeaderState extends State<PostHeader>
                           height: 100,
                           child: Center(
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           ),
                         ),

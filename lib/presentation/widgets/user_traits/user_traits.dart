@@ -15,7 +15,7 @@ class UserTraits extends StatelessWidget {
   const UserTraits({
     super.key,
     required this.userId,
-    this.itemHeight = 40,
+    this.itemHeight = 35,
   });
 
   void _handleTraitSelected(BuildContext context, TraitTypeModel traitType, String value) {

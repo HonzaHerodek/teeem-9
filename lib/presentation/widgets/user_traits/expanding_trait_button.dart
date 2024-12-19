@@ -80,7 +80,14 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: isSelected
           ? BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.white.withOpacity(0.15),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
               borderRadius: BorderRadius.circular(4),
             )
           : null,
@@ -102,8 +109,22 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: isSelected
           ? BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.white.withOpacity(0.2),
+                  Colors.white.withOpacity(0.15),
+                ],
+              ),
               borderRadius: BorderRadius.circular(4),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             )
           : null,
       child: Center(
@@ -126,15 +147,41 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
       width: widget.height,
       height: widget.height,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(widget.height / 2),
-      ),
-      child: Center(
-        child: Icon(
-          _parseIconData(type.iconData) ?? Icons.star,
-          color: Colors.white,
-          size: widget.height * 0.6 * scale,
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Colors.white.withOpacity(0.25),
+            Colors.white.withOpacity(0.2),
+          ],
         ),
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(widget.height / 2),
+          bottomRight: Radius.circular(widget.height / 2),
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 2,
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            _parseIconData(type.iconData) ?? Icons.star,
+            color: Colors.white,
+            size: widget.height * 0.6 * scale,
+          ),
+        ],
       ),
     );
   }
@@ -150,12 +197,29 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
       width: isExpanded ? expandedWidth : collapsedWidth,
       height: widget.height,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(widget.height / 2),
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Colors.white.withOpacity(0.15),
+            Colors.white.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(widget.height / 2),
+          bottomRight: Radius.circular(widget.height / 2),
+        ),
         border: Border.all(
           color: Colors.white.withOpacity(0.2),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias, // Prevent overflow during animation
       child: Material(
@@ -169,20 +233,49 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: _handleExpandButtonTap,
-                  borderRadius: BorderRadius.circular(widget.height / 2),
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(widget.height / 2),
+                    bottomRight: Radius.circular(widget.height / 2),
+                  ),
                   child: Container(
                     width: widget.height,
                     height: widget.height,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(widget.height / 2),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.add,
-                        color: Colors.white,
-                        size: widget.height * 0.6,
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.white.withOpacity(0.25),
+                          Colors.white.withOpacity(0.2),
+                        ],
                       ),
+                      borderRadius: BorderRadius.only(
+                        topRight: Radius.circular(widget.height / 2),
+                        bottomRight: Radius.circular(widget.height / 2),
+                      ),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: widget.height * 0.6,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -240,8 +333,18 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
                     width: widget.height,
                     height: widget.height,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(canConfirm ? 0.3 : 0.1),
-                      borderRadius: BorderRadius.circular(widget.height / 2),
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.white.withOpacity(canConfirm ? 0.35 : 0.15),
+                          Colors.white.withOpacity(canConfirm ? 0.3 : 0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.only(
+                        topRight: Radius.circular(widget.height / 2),
+                        bottomRight: Radius.circular(widget.height / 2),
+                      ),
                     ),
                     child: Center(
                       child: Icon(

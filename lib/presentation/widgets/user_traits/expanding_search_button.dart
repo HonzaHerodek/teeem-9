@@ -42,12 +42,29 @@ class _ExpandingSearchButtonState extends State<ExpandingSearchButton> {
       width: isExpanded ? expandedWidth : collapsedWidth,
       height: widget.height,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(widget.height / 2),
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Colors.white.withOpacity(0.15),
+            Colors.white.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(widget.height / 2),
+          bottomRight: Radius.circular(widget.height / 2),
+        ),
         border: Border.all(
           color: Colors.white.withOpacity(0.2),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -55,17 +72,43 @@ class _ExpandingSearchButtonState extends State<ExpandingSearchButton> {
           children: [
             InkWell(
               onTap: _handleButtonTap,
-              borderRadius: BorderRadius.circular(widget.height / 2),
+              borderRadius: BorderRadius.only(
+                topRight: Radius.circular(widget.height / 2),
+                bottomRight: Radius.circular(widget.height / 2),
+              ),
               child: Container(
                 width: widget.height,
                 height: widget.height,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(widget.height / 2),
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.white.withOpacity(0.25),
+                      Colors.white.withOpacity(0.2),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(widget.height / 2),
+                    bottomRight: Radius.circular(widget.height / 2),
+                  ),
                 ),
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
+                    Container(
+                      margin: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
                     Icon(
                       Icons.search,
                       color: Colors.white,
@@ -76,10 +119,24 @@ class _ExpandingSearchButtonState extends State<ExpandingSearchButton> {
                         right: 2,
                         bottom: 2,
                         child: Container(
-                          padding: const EdgeInsets.all(1),
+                          padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white.withOpacity(0.3),
+                                Colors.white.withOpacity(0.2),
+                              ],
+                            ),
                             shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 2,
+                              ),
+                            ],
                           ),
                           child: Icon(
                             Icons.add,
