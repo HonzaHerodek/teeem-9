@@ -1,150 +1,182 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
+import '../../../../data/models/notification_model.dart';
 import '../../../../data/models/traits/trait_type_model.dart';
-import '../../../../domain/repositories/trait_repository.dart';
+import '../../../../data/repositories/mock_notification_repository.dart';
+import '../../../../data/repositories/mock_trait_repository.dart';
 import '../models/filter_type.dart';
 
 class FeedHeaderState {
   final bool isSearchVisible;
   final bool isNotificationMenuOpen;
-  final bool isFilterMenuOpen;
-  final FilterType? activeFilterType;
-  final String? selectedCategory;
+  final FilterType activeFilterType;
   final TraitTypeModel? selectedTraitType;
+  final String? selectedTraitValue;
+  final List<TraitTypeModel> traitTypes;
+  final NotificationModel? selectedNotification;
+  final List<NotificationModel> notifications;
 
   const FeedHeaderState({
     this.isSearchVisible = false,
     this.isNotificationMenuOpen = false,
-    this.isFilterMenuOpen = false,
-    this.activeFilterType,
-    this.selectedCategory,
+    this.activeFilterType = FilterType.none,
     this.selectedTraitType,
+    this.selectedTraitValue,
+    this.traitTypes = const [],
+    this.selectedNotification,
+    this.notifications = const [],
   });
 
   FeedHeaderState copyWith({
     bool? isSearchVisible,
     bool? isNotificationMenuOpen,
-    bool? isFilterMenuOpen,
     FilterType? activeFilterType,
-    String? selectedCategory,
     TraitTypeModel? selectedTraitType,
-    bool clearFilterType = false,
-    bool clearTraits = false,
+    String? selectedTraitValue,
+    List<TraitTypeModel>? traitTypes,
+    NotificationModel? selectedNotification,
+    List<NotificationModel>? notifications,
+    bool clearNotification = false,
+    bool clearTraitType = false,
+    bool clearTraitValue = false,
   }) {
     return FeedHeaderState(
       isSearchVisible: isSearchVisible ?? this.isSearchVisible,
       isNotificationMenuOpen: isNotificationMenuOpen ?? this.isNotificationMenuOpen,
-      isFilterMenuOpen: isFilterMenuOpen ?? this.isFilterMenuOpen,
-      activeFilterType: clearFilterType ? null : (activeFilterType ?? this.activeFilterType),
-      selectedCategory: clearTraits ? null : (selectedCategory ?? this.selectedCategory),
-      selectedTraitType: clearTraits ? null : (selectedTraitType ?? this.selectedTraitType),
+      activeFilterType: activeFilterType ?? this.activeFilterType,
+      selectedTraitType: clearTraitType ? null : (selectedTraitType ?? this.selectedTraitType),
+      selectedTraitValue: clearTraitValue ? null : (selectedTraitValue ?? this.selectedTraitValue),
+      traitTypes: traitTypes ?? this.traitTypes,
+      selectedNotification: clearNotification ? null : (selectedNotification ?? this.selectedNotification),
+      notifications: notifications ?? this.notifications,
     );
   }
 }
 
 class FeedHeaderController extends ChangeNotifier {
   FeedHeaderState _state = const FeedHeaderState();
-  FeedHeaderState get state => _state;
-
-  // Add GlobalKey for target icon
   final GlobalKey targetIconKey = GlobalKey();
+  final GlobalKey notificationBarKey = GlobalKey();
+  final MockNotificationRepository _notificationRepository;
 
-  final TraitRepository _traitRepository = GetIt.instance<TraitRepository>();
-  List<TraitTypeModel> _traitTypes = [];
-  List<TraitTypeModel> get traitTypes => _traitTypes;
+  final MockTraitRepository _traitRepository;
 
-  FeedHeaderController() {
+  FeedHeaderController({
+    MockNotificationRepository? notificationRepository,
+    MockTraitRepository? traitRepository,
+  }) : _notificationRepository = notificationRepository ?? MockNotificationRepository(),
+       _traitRepository = traitRepository ?? MockTraitRepository() {
+    _loadNotifications();
     _loadTraitTypes();
   }
 
   Future<void> _loadTraitTypes() async {
-    try {
-      _traitTypes = await _traitRepository.getTraitTypes();
-      if (_traitTypes.isNotEmpty) {
-        // Set initial category when traits are loaded
-        _state = _state.copyWith(
-          selectedCategory: _traitTypes.first.category,
-        );
-      }
-      notifyListeners();
-    } catch (e) {
-      print('Error loading trait types: $e');
-    }
+    final traitTypes = await _traitRepository.getTraitTypes();
+    _state = _state.copyWith(traitTypes: traitTypes);
+    notifyListeners();
+  }
+
+  FeedHeaderState get state => _state;
+  List<TraitTypeModel> get traitTypes => _state.traitTypes;
+  NotificationModel? get selectedNotification => _state.selectedNotification;
+  List<NotificationModel> get notifications => _state.notifications;
+  int get unreadNotificationCount => _notificationRepository.getUnreadCount();
+
+  Future<void> _loadNotifications() async {
+    final notifications = await _notificationRepository.getNotifications();
+    _state = _state.copyWith(notifications: notifications);
+    notifyListeners();
   }
 
   void toggleSearch() {
+    final newSearchVisible = !_state.isSearchVisible;
+    _state = _state.copyWith(
+      isSearchVisible: newSearchVisible,
+      isNotificationMenuOpen: false,
+      activeFilterType: newSearchVisible ? FilterType.traits : FilterType.none,
+      clearTraitType: !newSearchVisible,
+      clearTraitValue: !newSearchVisible,
+    );
+    notifyListeners();
+  }
+
+  void hideSearch() {
     if (_state.isSearchVisible) {
-      closeSearch();
-    } else {
-      if (_traitTypes.isNotEmpty) {
-        _state = _state.copyWith(
-          isSearchVisible: true,
-          activeFilterType: FilterType.group,
-          selectedCategory: _traitTypes.first.category,
-          isNotificationMenuOpen: false,
-          isFilterMenuOpen: false,
-        );
-        notifyListeners();
-      }
+      _state = _state.copyWith(isSearchVisible: false);
+      notifyListeners();
     }
   }
 
   void closeSearch() {
     _state = _state.copyWith(
       isSearchVisible: false,
-      clearFilterType: true,
-      clearTraits: true,
+      activeFilterType: FilterType.none,
+      clearTraitType: true,
+      clearTraitValue: true,
     );
     notifyListeners();
   }
 
   void toggleNotificationMenu() {
+    final newState = !_state.isNotificationMenuOpen;
     _state = _state.copyWith(
-      isNotificationMenuOpen: !_state.isNotificationMenuOpen,
+      isNotificationMenuOpen: newState,
       isSearchVisible: false,
-      isFilterMenuOpen: false,
-      clearFilterType: true,
-      clearTraits: true,
+      clearNotification: !newState,
     );
     notifyListeners();
   }
 
-  void toggleFilterMenu() {
+  void selectNotification(NotificationModel notification) {
+    _notificationRepository.markAsRead(notification.id);
     _state = _state.copyWith(
-      isFilterMenuOpen: !_state.isFilterMenuOpen,
-      isNotificationMenuOpen: false,
+      selectedNotification: notification,
+      isNotificationMenuOpen: true,
     );
+    notifyListeners();
+  }
+
+  void clearNotificationSelection() {
+    _state = _state.copyWith(clearNotification: true);
     notifyListeners();
   }
 
   void selectFilter(FilterType type) {
-    _state = _state.copyWith(
-      activeFilterType: type,
-      isSearchVisible: true,
-      isFilterMenuOpen: true,
-    );
+    if (_state.activeFilterType == type) {
+      _state = _state.copyWith(
+        activeFilterType: FilterType.none,
+        clearTraitType: true,
+        clearTraitValue: true,
+      );
+    } else {
+      _state = _state.copyWith(
+        activeFilterType: type,
+        clearTraitType: true,
+        clearTraitValue: true,
+      );
+    }
     notifyListeners();
   }
 
-  void selectCategory(String category) {
-    final hasCategory = _traitTypes.any((t) => t.category == category);
-    if (hasCategory) {
-      _state = _state.copyWith(
-        selectedCategory: category,
-        selectedTraitType: null,
-      );
-      notifyListeners();
-    }
-  }
-
-  void selectTraitType(TraitTypeModel traitType) {
+  void selectTraitType(TraitTypeModel? traitType) {
     _state = _state.copyWith(
       selectedTraitType: traitType,
+      clearTraitValue: true,
     );
     notifyListeners();
   }
 
-  void setFilterOverlay(OverlayEntry entry) {
-    // No-op as we're not using overlays in the new implementation
+  void selectTraitValue(String value) {
+    _state = _state.copyWith(selectedTraitValue: value);
+    notifyListeners();
+  }
+
+  void updateTraitTypes(List<TraitTypeModel> traitTypes) {
+    _state = _state.copyWith(traitTypes: traitTypes);
+    notifyListeners();
+  }
+
+  void reset() {
+    _state = const FeedHeaderState();
+    notifyListeners();
   }
 }

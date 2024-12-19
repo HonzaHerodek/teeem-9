@@ -1,0 +1,63 @@
+import '../../../../data/models/post_model.dart';
+import '../../../../data/models/project_model.dart';
+
+class FeedItemService {
+  final List<PostModel> posts;
+  final List<ProjectModel> projects;
+  final bool isCreatingPost;
+
+  const FeedItemService({
+    required this.posts,
+    required this.projects,
+    this.isCreatingPost = false,
+  });
+
+  int get totalItemCount {
+    int count = posts.length;
+    if (projects.isNotEmpty) {
+      count += 1; // First project
+      count += ((posts.length - 1) / 5).floor(); // Additional projects
+    }
+    if (isCreatingPost) {
+      count += 1;
+    }
+    return count;
+  }
+
+  bool isProjectPosition(int adjustedIndex) {
+    if (projects.isEmpty) return false;
+    if (adjustedIndex == 0) return true; // First project
+    return projects.length > 1 &&
+        adjustedIndex > 1 &&
+        ((adjustedIndex - 1) % 6 == 5); // Every 6th position after first project
+  }
+
+  int getProjectIndex(int adjustedIndex) {
+    if (adjustedIndex == 0) return 0;
+    return (((adjustedIndex - 1) - 5) ~/ 6 + 1) % projects.length;
+  }
+
+  int getPostIndex(int adjustedIndex) {
+    return adjustedIndex - 1 - ((adjustedIndex - 1) ~/ 6);
+  }
+
+  bool isValidPostIndex(int postIndex) {
+    return postIndex < posts.length;
+  }
+
+  bool isCreatingPostPosition(int index) {
+    return isCreatingPost && index == 0;
+  }
+
+  ProjectModel? getProjectAtPosition(int adjustedIndex) {
+    if (!isProjectPosition(adjustedIndex)) return null;
+    final projectIndex = getProjectIndex(adjustedIndex);
+    return projectIndex < projects.length ? projects[projectIndex] : null;
+  }
+
+  PostModel? getPostAtPosition(int adjustedIndex) {
+    if (isProjectPosition(adjustedIndex)) return null;
+    final postIndex = getPostIndex(adjustedIndex);
+    return isValidPostIndex(postIndex) ? posts[postIndex] : null;
+  }
+}

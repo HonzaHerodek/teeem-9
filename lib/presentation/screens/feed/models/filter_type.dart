@@ -1,36 +1,26 @@
 import 'package:flutter/material.dart';
 
 enum FilterType {
-  group,
-  pair,
-  self,
+  traits,
   none;
 
   String get displayName {
     switch (this) {
-      case FilterType.group:
-        return 'Group';
-      case FilterType.pair:
-        return 'Pair';
-      case FilterType.self:
-        return 'Self';
+      case FilterType.traits:
+        return 'Traits';
       case FilterType.none:
         return 'None';
     }
   }
 
   String get searchPlaceholder {
-    return 'Describe task, people, etc. to search';
+    return 'Search by traits...';
   }
 
   IconData get icon {
     switch (this) {
-      case FilterType.group:
-        return Icons.group;
-      case FilterType.pair:
-        return Icons.people;
-      case FilterType.self:
-        return Icons.person;
+      case FilterType.traits:
+        return Icons.psychology;
       case FilterType.none:
         return Icons.search;
     }

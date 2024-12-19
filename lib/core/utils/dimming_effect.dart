@@ -1,6 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+/// Shape types for excluded areas in dimming effect
+enum DimmingExcludeShape {
+  circle,
+  rectangle,
+}
+
 /// Configuration for the dimming effect
 class DimmingConfig {
   /// The color used for dimming the screen
@@ -21,6 +27,12 @@ class DimmingConfig {
   /// The strength of the glow effect (0.0 to 1.0)
   final double glowStrength;
 
+  /// The shape to use for excluded areas
+  final DimmingExcludeShape excludeShape;
+
+  /// Border radius for rectangle shape
+  final BorderRadius? borderRadius;
+
   const DimmingConfig({
     this.dimmingColor = Colors.black,
     this.dimmingStrength = 0.5,
@@ -28,7 +40,32 @@ class DimmingConfig {
     this.glowSpread = 4.0,
     this.glowBlur = 8.0,
     this.glowStrength = 0.3,
+    this.excludeShape = DimmingExcludeShape.circle,
+    this.borderRadius,
   });
+
+  /// Creates a copy of this config with the given fields replaced
+  DimmingConfig copyWith({
+    Color? dimmingColor,
+    double? dimmingStrength,
+    Color? glowColor,
+    double? glowSpread,
+    double? glowBlur,
+    double? glowStrength,
+    DimmingExcludeShape? excludeShape,
+    BorderRadius? borderRadius,
+  }) {
+    return DimmingConfig(
+      dimmingColor: dimmingColor ?? this.dimmingColor,
+      dimmingStrength: dimmingStrength ?? this.dimmingStrength,
+      glowColor: glowColor ?? this.glowColor,
+      glowSpread: glowSpread ?? this.glowSpread,
+      glowBlur: glowBlur ?? this.glowBlur,
+      glowStrength: glowStrength ?? this.glowStrength,
+      excludeShape: excludeShape ?? this.excludeShape,
+      borderRadius: borderRadius ?? this.borderRadius,
+    );
+  }
 }
 
 /// A widget that applies a dimming effect to its child
@@ -99,22 +136,26 @@ class DimmingOverlay extends StatelessWidget {
 
     final position = renderBox.localToGlobal(Offset.zero);
     final size = renderBox.size;
-    final diameter = size.width;
     final extraPadding = config.glowSpread * 2;
 
     return Positioned(
       left: position.dx - extraPadding,
       top: position.dy - extraPadding,
-      width: diameter + (extraPadding * 2),
-      height: diameter + (extraPadding * 2),
+      width: size.width + (extraPadding * 2),
+      height: size.height + (extraPadding * 2),
       child: Center(
         child: AnimatedContainer(
           duration: _animationDuration,
           curve: _animationCurve,
-          width: diameter,
-          height: diameter,
+          width: size.width,
+          height: size.height,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
+            shape: config.excludeShape == DimmingExcludeShape.circle
+                ? BoxShape.circle
+                : BoxShape.rectangle,
+            borderRadius: config.excludeShape == DimmingExcludeShape.rectangle
+                ? config.borderRadius
+                : null,
             boxShadow: [
               BoxShadow(
                 color: config.glowColor
@@ -124,18 +165,27 @@ class DimmingOverlay extends StatelessWidget {
               ),
             ],
           ),
-          child: ClipOval(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: config.glowBlur * 0.25,
-                sigmaY: config.glowBlur * 0.25,
-              ),
-              child: Container(
-                color: Colors.transparent,
-              ),
-            ),
-          ),
+          child: config.excludeShape == DimmingExcludeShape.circle
+              ? ClipOval(
+                  child: _buildBackdropFilter(),
+                )
+              : ClipRRect(
+                  borderRadius: config.borderRadius ?? BorderRadius.zero,
+                  child: _buildBackdropFilter(),
+                ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBackdropFilter() {
+    return BackdropFilter(
+      filter: ImageFilter.blur(
+        sigmaX: config.glowBlur * 0.25,
+        sigmaY: config.glowBlur * 0.25,
+      ),
+      child: Container(
+        color: Colors.transparent,
       ),
     );
   }

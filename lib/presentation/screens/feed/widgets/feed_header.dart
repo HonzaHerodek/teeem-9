@@ -40,33 +40,84 @@ class FeedHeader extends StatelessWidget {
   }
 
   Widget _buildTraitChips() {
-    if (!headerController.state.isSearchVisible || 
-        headerController.state.selectedCategory == null) {
+    if (!headerController.state.isSearchVisible) {
       return const SizedBox.shrink();
     }
 
-    final filteredTraitTypes = headerController.traitTypes
-        .where((t) => t.category == headerController.state.selectedCategory)
-        .toList();
+    // If no trait type is selected, show categories and trait types
+    if (headerController.state.selectedTraitType == null) {
+      final categories = headerController.traitTypes
+          .map((t) => t.category)
+          .toSet()
+          .toList();
 
+      return ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: headerController.traitTypes.length,
+        itemBuilder: (context, index) {
+          final traitType = headerController.traitTypes[index];
+          return UserTraitChip(
+            trait: UserTraitModel(
+              id: traitType.id,
+              traitTypeId: traitType.id,
+              value: traitType.name,
+              displayOrder: 0,
+            ),
+            traitType: traitType,
+            isSelected: false,
+            onTap: () => headerController.selectTraitType(traitType),
+            spacing: 15,
+          );
+        },
+      );
+    }
+    
+    // If a trait type is selected, show its possible values
+    final selectedType = headerController.state.selectedTraitType!;
     return ListView.builder(
       scrollDirection: Axis.horizontal,
       physics: const ClampingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: filteredTraitTypes.length,
+      itemCount: selectedType.possibleValues.length + 1, // +1 for back button
       itemBuilder: (context, index) {
-        final traitType = filteredTraitTypes[index];
-        final String selectedValue = traitType.possibleValues.first;
+        if (index == 0) {
+          // Back button as first chip
+          return UserTraitChip(
+            trait: UserTraitModel(
+              id: 'back',
+              traitTypeId: 'back',
+              value: 'Back',
+              displayOrder: 0,
+            ),
+            traitType: TraitTypeModel(
+              id: 'back',
+              name: '',
+              iconData: 'e5c4', // arrow_back icon
+              category: '',
+              possibleValues: const [],
+              displayOrder: 0,
+            ),
+            onTap: () => headerController.selectTraitType(null),
+            spacing: 15,
+          );
+        }
+        
+        final value = selectedType.possibleValues[index - 1];
         return UserTraitChip(
           trait: UserTraitModel(
-            id: traitType.id,
-            traitTypeId: traitType.id,
-            value: selectedValue,
+            id: selectedType.id,
+            traitTypeId: selectedType.id,
+            value: value,
             displayOrder: 0,
           ),
-          traitType: traitType,
-          isSelected: traitType == headerController.state.selectedTraitType,
-          onTap: () => headerController.selectTraitType(traitType),
+          traitType: selectedType,
+          isSelected: false,
+          onTap: () {
+            // Handle value selection
+            headerController.selectTraitValue(value);
+          },
           spacing: 15,
         );
       },

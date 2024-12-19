@@ -22,42 +22,32 @@ class FilterService {
 
     // Then apply the selected filter type
     switch (_currentFilter) {
-      case FilterType.group:
-        filteredPosts = filteredPosts.where((post) {
-          final interests = post.targetingCriteria?.interests?.length ?? 0;
-          final skills = post.targetingCriteria?.skills?.length ?? 0;
-          return interests > 2 || skills > 2;
-        }).toList();
-        break;
-      
-      case FilterType.pair:
-        filteredPosts = filteredPosts.where((post) {
-          final interests = post.targetingCriteria?.interests?.length ?? 0;
-          final skills = post.targetingCriteria?.skills?.length ?? 0;
-          return interests == 2 || skills == 2;
-        }).toList();
-        break;
-      
-      case FilterType.self:
-        filteredPosts = filteredPosts.where((post) {
-          if (post.userId == currentUser.id) return true;
-          final interests = post.targetingCriteria?.interests?.length ?? 0;
-          final skills = post.targetingCriteria?.skills?.length ?? 0;
-          return interests <= 1 && skills <= 1;
-        }).toList();
+      case FilterType.traits:
+        // Filter posts based on trait matching
+        if (_searchQuery.isNotEmpty) {
+          filteredPosts = filteredPosts.where((post) {
+            // Check if any of the post's targeting traits match the search query
+            final traits = [
+              ...(post.targetingCriteria?.interests ?? []),
+              ...(post.targetingCriteria?.skills ?? [])
+            ];
+            return traits.any((trait) => 
+              trait.toLowerCase().contains(_searchQuery)
+            );
+          }).toList();
+        }
         break;
       
       case FilterType.none:
       default:
+        // When no filter is selected, only apply basic search if query exists
+        if (_searchQuery.isNotEmpty) {
+          filteredPosts = filteredPosts.where((post) =>
+            post.title.toLowerCase().contains(_searchQuery) ||
+            post.description.toLowerCase().contains(_searchQuery)
+          ).toList();
+        }
         break;
-    }
-
-    // Apply search query if present
-    if (_searchQuery.isNotEmpty) {
-      filteredPosts = filteredPosts.where((post) =>
-        post.title.toLowerCase().contains(_searchQuery) ||
-        post.description.toLowerCase().contains(_searchQuery)
-      ).toList();
     }
 
     return filteredPosts;
