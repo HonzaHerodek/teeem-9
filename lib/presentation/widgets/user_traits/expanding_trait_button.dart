@@ -65,10 +65,12 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
     }
   }
 
-  void _handleButtonTap() {
-    if (!isExpanded) {
-      setState(() => isExpanded = true);
-    } else if (selectedTraitType != null && selectedValue != null) {
+  void _handleExpandButtonTap() {
+    setState(() => isExpanded = true);
+  }
+
+  void _handleConfirmButtonTap() {
+    if (selectedTraitType != null && selectedValue != null) {
       _handleTraitSelection();
     }
   }
@@ -155,97 +157,104 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
           width: 1,
         ),
       ),
+      clipBehavior: Clip.antiAlias, // Prevent overflow during animation
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          onTap: _handleButtonTap,
-          borderRadius: BorderRadius.circular(widget.height / 2),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (!isExpanded)
-                Container(
-                  width: widget.height,
-                  height: widget.height,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(widget.height / 2),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.add,
-                      color: Colors.white,
-                      size: widget.height * 0.6,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (!isExpanded)
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _handleExpandButtonTap,
+                  borderRadius: BorderRadius.circular(widget.height / 2),
+                  child: Container(
+                    width: widget.height,
+                    height: widget.height,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(widget.height / 2),
                     ),
-                  ),
-                )
-              else ...[
-                Expanded(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: ScrollableTraitList<TraitTypeModel>(
-                          items: widget.traitTypes,
-                          selectedItem: selectedTraitType,
-                          itemBuilder: _buildTraitItem,
-                          onItemSelected: (type) {
-                            setState(() {
-                              selectedTraitType = type;
-                              selectedValue = null;
-                            });
-                          },
-                          hintText: 'Trait',
-                          maxHeight: widget.height,
-                          itemHeight: 24,
-                          iconBuilder: _buildTraitIcon,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (selectedTraitType != null)
-                        SizedBox(
-                          width: 50,
-                          child: ScrollableTraitList<String>(
-                            items: selectedTraitType!.possibleValues,
-                            selectedItem: selectedValue,
-                            itemBuilder: _buildValueItem,
-                            onItemSelected: (value) {
-                              setState(() {
-                                selectedValue = value;
-                              });
-                            },
-                            hintText: 'Value',
-                            maxHeight: widget.height,
-                            itemHeight: 24,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: widget.height,
-                  height: widget.height,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(widget.height / 2),
-                  ),
-                  child: Center(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
+                    child: Center(
                       child: Icon(
-                        canConfirm ? Icons.check : Icons.add,
-                        key: ValueKey(canConfirm),
+                        Icons.add,
                         color: Colors.white,
                         size: widget.height * 0.6,
                       ),
                     ),
                   ),
                 ),
-              ],
+              )
+            else ...[
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 120,
+                      child: ScrollableTraitList<TraitTypeModel>(
+                        items: widget.traitTypes,
+                        selectedItem: selectedTraitType,
+                        itemBuilder: _buildTraitItem,
+                        onItemSelected: (type) {
+                          setState(() {
+                            selectedTraitType = type;
+                            selectedValue = null;
+                          });
+                        },
+                        hintText: 'Trait',
+                        maxHeight: widget.height,
+                        itemHeight: 24,
+                        iconBuilder: _buildTraitIcon,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (selectedTraitType != null)
+                      SizedBox(
+                        width: 50,
+                        child: ScrollableTraitList<String>(
+                          items: selectedTraitType!.possibleValues,
+                          selectedItem: selectedValue,
+                          itemBuilder: _buildValueItem,
+                          onItemSelected: (value) {
+                            setState(() {
+                              selectedValue = value;
+                            });
+                          },
+                          hintText: 'Value',
+                          maxHeight: widget.height,
+                          itemHeight: 24,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: canConfirm ? _handleConfirmButtonTap : null,
+                  borderRadius: BorderRadius.circular(widget.height / 2),
+                  child: Container(
+                    width: widget.height,
+                    height: widget.height,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(canConfirm ? 0.3 : 0.1),
+                      borderRadius: BorderRadius.circular(widget.height / 2),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.check,
+                        color: Colors.white.withOpacity(canConfirm ? 1.0 : 0.3),
+                        size: widget.height * 0.6,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );

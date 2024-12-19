@@ -14,7 +14,7 @@ class MockTraitRepository implements TraitRepository {
       name: 'Hair Color',
       iconData: 'e318', // content_cut icon
       category: 'Physical',
-      possibleValues: ['Blonde', 'Brown', 'Black', 'Red'],
+      possibleValues: ['Blonde', 'Brown', 'Black', 'Red', 'Gray', 'White'],
       displayOrder: 1,
     ),
     TraitTypeModel(
@@ -22,7 +22,7 @@ class MockTraitRepository implements TraitRepository {
       name: 'Eye Color',
       iconData: 'e417', // remove_red_eye icon
       category: 'Physical',
-      possibleValues: ['Blue', 'Green', 'Brown', 'Hazel'],
+      possibleValues: ['Blue', 'Green', 'Brown', 'Hazel', 'Gray'],
       displayOrder: 2,
     ),
     TraitTypeModel(
@@ -30,13 +30,92 @@ class MockTraitRepository implements TraitRepository {
       name: 'Hobby',
       iconData: 'e332', // sports_basketball icon
       category: 'Interests',
-      possibleValues: ['Reading', 'Gaming', 'Sports', 'Music', 'Art'],
+      possibleValues: ['Reading', 'Gaming', 'Sports', 'Music', 'Art', 'Cooking', 'Travel'],
       displayOrder: 3,
+    ),
+    TraitTypeModel(
+      id: '4',
+      name: 'Language',
+      iconData: 'e8e2', // language icon
+      category: 'Skills',
+      possibleValues: ['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese'],
+      displayOrder: 4,
+    ),
+    TraitTypeModel(
+      id: '5',
+      name: 'Pet',
+      iconData: 'e91d', // pets icon
+      category: 'Lifestyle',
+      possibleValues: ['Dog', 'Cat', 'Bird', 'Fish', 'Hamster', 'None'],
+      displayOrder: 5,
     ),
   ];
 
   // Mock data for user traits
-  final Map<String, List<UserTraitModel>> _userTraits = {};
+  final Map<String, List<UserTraitModel>> _userTraits = {
+    'test_user': [
+      UserTraitModel(
+        id: '1',
+        traitTypeId: '1',
+        value: 'Brown',
+        displayOrder: 1,
+      ),
+      UserTraitModel(
+        id: '2',
+        traitTypeId: '2',
+        value: 'Blue',
+        displayOrder: 2,
+      ),
+      UserTraitModel(
+        id: '3',
+        traitTypeId: '3',
+        value: 'Gaming',
+        displayOrder: 3,
+      ),
+      UserTraitModel(
+        id: '4',
+        traitTypeId: '4',
+        value: 'English',
+        displayOrder: 4,
+      ),
+      UserTraitModel(
+        id: '5',
+        traitTypeId: '5',
+        value: 'Dog',
+        displayOrder: 5,
+      ),
+      UserTraitModel(
+        id: '6',
+        traitTypeId: '1',
+        value: 'Black',
+        displayOrder: 6,
+      ),
+      UserTraitModel(
+        id: '7',
+        traitTypeId: '3',
+        value: 'Music',
+        displayOrder: 7,
+      ),
+      UserTraitModel(
+        id: '8',
+        traitTypeId: '4',
+        value: 'Spanish',
+        displayOrder: 8,
+      ),
+      UserTraitModel(
+        id: '9',
+        traitTypeId: '5',
+        value: 'Cat',
+        displayOrder: 9,
+      ),
+      UserTraitModel(
+        id: '10',
+        traitTypeId: '3',
+        value: 'Art',
+        displayOrder: 10,
+      ),
+    ],
+  };
 
   @override
   Future<List<TraitTypeModel>> getTraitTypes() async {

@@ -10,13 +10,11 @@ import 'user_traits_list.dart';
 
 class UserTraits extends StatelessWidget {
   final String userId;
-  final double height;
   final double itemHeight;
 
   const UserTraits({
     super.key,
     required this.userId,
-    this.height = 120,
     this.itemHeight = 40,
   });
 
@@ -94,7 +92,6 @@ class UserTraits extends StatelessWidget {
             traitTypes: state.traitTypes,
             traits: state.userTraits,
             onTraitSelected: (traitType, value) => _handleTraitSelected(context, traitType, value),
-            height: height,
             itemHeight: itemHeight,
           );
         }
