@@ -6,7 +6,6 @@ import '../../../data/models/traits/user_trait_model.dart';
 import '../../bloc/traits/traits_bloc.dart';
 import '../../bloc/traits/traits_event.dart';
 import '../../bloc/traits/traits_state.dart';
-import 'add_trait_dialog.dart';
 import 'user_traits_list.dart';
 
 class UserTraits extends StatelessWidget {
@@ -25,48 +24,16 @@ class UserTraits extends StatelessWidget {
     this.spacing = 8,
   });
 
-  Future<void> _showAddTraitDialog(BuildContext context, List<TraitTypeModel> traitTypes) async {
-    try {
-      final completer = Completer<void>();
-      
-      showDialog<void>(
-        context: context,
-        barrierDismissible: true,
-        builder: (dialogContext) => AddTraitDialog(
-          traitTypes: traitTypes,
-          onTraitSelected: (traitType, value) {
-            print('Selected trait - Type: ${traitType.name}, Value: $value'); // Debug log
-            
-            // Close dialog first
-            Navigator.of(dialogContext).pop();
-            
-            // Add trait through bloc after dialog is closed
-            Future.microtask(() {
-              context.read<TraitsBloc>().add(
-                    AddTrait(
-                      userId: userId,
-                      traitType: traitType,
-                      value: value,
-                    ),
-                  );
-              completer.complete();
-            });
-          },
-        ),
-      );
-
-      await completer.future;
-    } catch (e) {
-      print('Error showing/handling trait dialog: $e'); // Debug log
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to add trait. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  void _handleTraitSelected(BuildContext context, TraitTypeModel traitType, String value) {
+    print('Selected trait - Type: ${traitType.name}, Value: $value'); // Debug log
+    
+    context.read<TraitsBloc>().add(
+      AddTrait(
+        userId: userId,
+        traitType: traitType,
+        value: value,
+      ),
+    );
   }
 
   @override
@@ -130,7 +97,7 @@ class UserTraits extends StatelessWidget {
           return UserTraitsList(
             traitTypes: state.traitTypes,
             traits: state.userTraits,
-            onAddTrait: () => _showAddTraitDialog(context, state.traitTypes),
+            onTraitSelected: (traitType, value) => _handleTraitSelected(context, traitType, value),
             height: height,
             itemWidth: itemWidth,
             itemHeight: itemHeight,
