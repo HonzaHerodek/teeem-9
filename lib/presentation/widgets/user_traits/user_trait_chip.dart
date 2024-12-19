@@ -32,7 +32,7 @@ class UserTraitChip extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      margin: EdgeInsets.symmetric(horizontal: spacing / 2),
+      margin: EdgeInsets.only(right: spacing / 2),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(height / 2),
@@ -61,13 +61,14 @@ class UserTraitChip extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 6.0),
               child: Text(
                 trait.value,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
+                  height: 1.0,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),

@@ -24,7 +24,7 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
   TraitTypeModel? selectedTraitType;
   String? selectedValue;
   late final double expandedWidth;
-  final double collapsedWidth = 40;
+  final double collapsedWidth = 48; // Match parent container minimum width
 
   @override
   void initState() {
@@ -32,11 +32,13 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
     // Calculate minimum width based on longest trait type name
     final longestTraitName = widget.traitTypes.fold<int>(
       0,
-      (maxLength, trait) => trait.name.length > maxLength ? trait.name.length : maxLength,
+      (maxLength, trait) =>
+          trait.name.length > maxLength ? trait.name.length : maxLength,
     );
-    // Approximate width calculation: 
-    // 40 (icon) + 160 (trait list) + 8 (spacing) + 60 (value list) + 40 (button)
-    expandedWidth = math.min(308, math.max(260, (longestTraitName * 6.0) + 140));
+    // More compact width calculation:
+    // 40 (icon) + 120 (trait list) + 8 (spacing) + 50 (value list) + 40 (button)
+    expandedWidth =
+        math.min(258, math.max(220, (longestTraitName * 5.0) + 120));
   }
 
   IconData? _parseIconData(String iconData) {
@@ -74,10 +76,12 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
   Widget _buildTraitItem(TraitTypeModel type, bool isSelected, double scale) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: isSelected ? BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-      ) : null,
+      decoration: isSelected
+          ? BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            )
+          : null,
       child: Text(
         type.name,
         style: TextStyle(
@@ -94,10 +98,12 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
   Widget _buildValueItem(String value, bool isSelected, double scale) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: isSelected ? BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-      ) : null,
+      decoration: isSelected
+          ? BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            )
+          : null,
       child: Center(
         child: Text(
           value,
@@ -135,7 +141,7 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
   Widget build(BuildContext context) {
     final canConfirm = selectedTraitType != null && selectedValue != null;
     final wheelHeight = widget.height * 3;
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -180,7 +186,7 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(
-                        width: 160,
+                        width: 120,
                         child: ScrollableTraitList<TraitTypeModel>(
                           items: widget.traitTypes,
                           selectedItem: selectedTraitType,
@@ -200,7 +206,7 @@ class _ExpandingTraitButtonState extends State<ExpandingTraitButton> {
                       const SizedBox(width: 8),
                       if (selectedTraitType != null)
                         SizedBox(
-                          width: 60,
+                          width: 50,
                           child: ScrollableTraitList<String>(
                             items: selectedTraitType!.possibleValues,
                             selectedItem: selectedValue,

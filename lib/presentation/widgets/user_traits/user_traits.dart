@@ -11,17 +11,13 @@ import 'user_traits_list.dart';
 class UserTraits extends StatelessWidget {
   final String userId;
   final double height;
-  final double itemWidth;
   final double itemHeight;
-  final double spacing;
 
   const UserTraits({
     super.key,
     required this.userId,
     this.height = 120,
-    this.itemWidth = 120,
     this.itemHeight = 40,
-    this.spacing = 8,
   });
 
   void _handleTraitSelected(BuildContext context, TraitTypeModel traitType, String value) {
@@ -99,9 +95,7 @@ class UserTraits extends StatelessWidget {
             traits: state.userTraits,
             onTraitSelected: (traitType, value) => _handleTraitSelected(context, traitType, value),
             height: height,
-            itemWidth: itemWidth,
             itemHeight: itemHeight,
-            spacing: spacing,
           );
         }
 
