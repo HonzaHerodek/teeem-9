@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../data/models/post_model.dart';
-import '../../core/utils/step_type_utils.dart';
 import 'step_indicators/step_dots.dart';
 import 'step_indicators/step_miniatures.dart';
 

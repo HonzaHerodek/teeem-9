@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../data/models/post_model.dart';
-import '../../data/models/traits/trait_type_model.dart';
-import '../../domain/repositories/trait_repository.dart';
-import '../../core/di/injection.dart';
-import 'rating_stars.dart';
 import 'post_header.dart';
 import 'step_indicators/step_dots.dart';
 import 'step_indicators/step_miniatures.dart';
-import 'step_carousel.dart';
-import 'common/shadowed_text.dart';
+import 'post_card/post_card_decoration.dart';
+import 'post_card/post_card_mixin.dart';
+import 'post_card/post_step_content.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -33,22 +30,12 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard>
-    with SingleTickerProviderStateMixin {
-  int _currentStep = 0;
-  bool _isHeaderExpanded = false;
-  bool _showMiniatures = false;
-  late List<PostStep> _allSteps;
-  late AnimationController _miniatureAnimation;
-  final PageController _pageController = PageController();
-  static const double _shrunkHeaderHeight = 60.0;
-  double _headerAnimationValue = 0.0;
-  List<TraitTypeModel>? _traitTypes;
-
+    with SingleTickerProviderStateMixin, PostCardMixin {
   @override
   void initState() {
     super.initState();
-    _loadTraitTypes();
-    _allSteps = [
+    loadTraitTypes();
+    allSteps = [
       PostStep(
         id: '${widget.post.id}_intro',
         title: widget.post.title,
@@ -66,222 +53,58 @@ class _PostCardState extends State<PostCard>
       ),
     ];
 
-    _miniatureAnimation = AnimationController(
+    miniatureAnimation = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
   }
 
   @override
-  void dispose() {
-    _miniatureAnimation.dispose();
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _handleHeaderExpandChange(bool expanded) {
-    setState(() {
-      _isHeaderExpanded = expanded;
-      if (expanded) {
-        _miniatureAnimation.forward();
-      } else {
-        _miniatureAnimation.reverse();
-      }
-    });
-  }
-
-  void _handleTransformToMiniatures() {
-    setState(() => _showMiniatures = true);
-  }
-
-  void _handleTransformToDots() {
-    setState(() => _showMiniatures = false);
-  }
-
-  void _handleStepSelected(int index) {
-    setState(() => _currentStep = index);
-  }
-
-  bool get _shouldShowHeader {
-    return _currentStep == 0 || _currentStep == _allSteps.length - 1;
-  }
-
-  bool get _isFirstOrLastStep {
-    return _currentStep == 0 || _currentStep == _allSteps.length - 1;
-  }
-
-  Widget _buildStepContent(int index, BoxConstraints constraints) {
-    if (index == 0) {
-      final isLiked = widget.currentUserId != null &&
-          widget.post.likes.contains(widget.currentUserId);
-      return Stack(
-        children: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ShadowedText(
-                    text: widget.post.title,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ShadowedText(
-                    text: widget.post.description,
-                    fontSize: 16,
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 48, // Moved higher from 24 to 48
-            left: 0,
-            right: 0,
-            child: Center(
-              child: IconButton(
-                icon: Icon(
-                  isLiked ? Icons.favorite : Icons.favorite_border,
-                  color: isLiked ? Colors.red : Colors.white,
-                  size: 32,
-                ),
-                onPressed: widget.onLike,
-              ),
-            ),
-          ),
-        ],
-      );
-    } else if (index == _allSteps.length - 1) {
-      final userRating = widget.currentUserId != null
-          ? widget.post.getUserRating(widget.currentUserId!)?.value ?? 0.0
-          : 0.0;
-      return Stack(
-        children: [
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 40),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const ShadowedText(
-                        text: 'Rate this post',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      const SizedBox(height: 16),
-                      RatingStars(
-                        rating: userRating,
-                        onRatingChanged: widget.onRate,
-                        isInteractive: true,
-                        size: 32,
-                        color: Colors.amber,
-                      ),
-                      const SizedBox(height: 24),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.share_outlined,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                        onPressed: widget.onShare,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    } else {
-      return StepCarousel(
-        steps: [widget.post.steps[index - 1]],
-        showArrows: false,
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size.width - 32;
-    final headerHeight = _isHeaderExpanded ? size * 0.75 : _shrunkHeaderHeight;
+    final headerHeight = isHeaderExpanded ? size * 0.75 : PostCardMixin.shrunkHeaderHeight;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.transparent,
-            Colors.black.withOpacity(0.3),
-          ],
-          stops: const [0.0, 0.5, 1.0],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 35,
-            spreadRadius: 8,
-            offset: const Offset(0, 15),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 25,
-            spreadRadius: 5,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: const Color(0xFF2A1635).withOpacity(0.2),
-            blurRadius: 20,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
+      decoration: PostCardDecoration.circularGradient(size),
       child: Container(
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-        ),
+        decoration: PostCardDecoration.circularClip,
         clipBehavior: Clip.antiAlias,
         child: Container(
           color: Colors.black.withOpacity(0.5),
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // PageView for step content with synchronized animations
               AnimatedBuilder(
-                animation: _miniatureAnimation,
+                animation: miniatureAnimation,
                 builder: (context, child) {
-                  // Revert to simpler animation timing
-                  final contentOpacity = 1.0 - _headerAnimationValue;
-                  final slideOffset = size * 0.2 * _headerAnimationValue;
+                  final contentOpacity = 1.0 - headerAnimationValue;
+                  final slideOffset = size * 0.2 * headerAnimationValue;
                   
                   return Transform.translate(
                     offset: Offset(0, slideOffset),
                     child: Opacity(
                       opacity: contentOpacity,
                       child: IgnorePointer(
-                        ignoring: _isHeaderExpanded,
+                        ignoring: isHeaderExpanded,
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             return PageView.builder(
-                              controller: _pageController,
-                              itemCount: _allSteps.length,
-                              onPageChanged: _handleStepSelected,
-                              itemBuilder: (context, index) =>
-                                  _buildStepContent(index, constraints),
+                              controller: pageController,
+                              itemCount: allSteps.length,
+                              onPageChanged: handleStepSelected,
+                              itemBuilder: (context, index) => PostStepContent(
+                                index: index,
+                                totalSteps: allSteps.length,
+                                post: widget.post,
+                                currentUserId: widget.currentUserId,
+                                onLike: widget.onLike,
+                                onShare: widget.onShare,
+                                onRate: widget.onRate,
+                                constraints: constraints,
+                              ),
                             );
                           },
                         ),
@@ -290,7 +113,7 @@ class _PostCardState extends State<PostCard>
                   );
                 },
               ),
-              if (_shouldShowHeader)
+              if (shouldShowHeader)
                 Positioned(
                   top: 0,
                   left: 0,
@@ -299,18 +122,18 @@ class _PostCardState extends State<PostCard>
                   child: PostHeader(
                     username: widget.post.username,
                     userProfileImage: widget.post.userProfileImage,
-                    steps: _allSteps,
-                    currentStep: _currentStep,
-                    isExpanded: _isHeaderExpanded,
-                    onExpandChanged: _handleHeaderExpandChange,
+                    steps: allSteps,
+                    currentStep: currentStep,
+                    isExpanded: isHeaderExpanded,
+                    onExpandChanged: handleHeaderExpandChange,
                     userId: widget.post.userId,
                     currentPostId: widget.post.id,
-                    traitTypes: _traitTypes ?? [],
+                    traitTypes: traitTypes ?? [],
                     userTraits: widget.post.userTraits,
                     rating: widget.post.ratingStats.averageRating,
                     onAnimationChanged: (value) {
                       setState(() {
-                        _headerAnimationValue = value;
+                        headerAnimationValue = value;
                       });
                     },
                   ),
@@ -318,24 +141,24 @@ class _PostCardState extends State<PostCard>
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
-                bottom: 24, // Positioned below the heart icon with spacing
+                bottom: 24,
                 left: 0,
                 right: 0,
-                child: _isHeaderExpanded ||
-                        (_showMiniatures && !_isFirstOrLastStep)
+                child: isHeaderExpanded ||
+                        (showMiniatures && !isFirstOrLastStep)
                     ? StepMiniatures(
-                        steps: _allSteps,
-                        currentStep: _currentStep,
-                        onExpand: () => _handleHeaderExpandChange(false),
+                        steps: allSteps,
+                        currentStep: currentStep,
+                        onExpand: () => handleHeaderExpandChange(false),
                         onTransformToDots:
-                            _showMiniatures ? _handleTransformToDots : null,
-                        pageController: _pageController,
+                            showMiniatures ? handleTransformToDots : null,
+                        pageController: pageController,
                       )
                     : StepDots(
-                        steps: _allSteps,
-                        currentStep: _currentStep,
-                        onExpand: () => _handleHeaderExpandChange(true),
-                        onMiniaturize: _handleTransformToMiniatures,
+                        steps: allSteps,
+                        currentStep: currentStep,
+                        onExpand: () => handleHeaderExpandChange(true),
+                        onMiniaturize: handleTransformToMiniatures,
                       ),
               ),
             ],
@@ -343,18 +166,5 @@ class _PostCardState extends State<PostCard>
         ),
       ),
     );
-  }
-
-  Future<void> _loadTraitTypes() async {
-    try {
-      final traitTypes = await getIt<TraitRepository>().getTraitTypes();
-      if (mounted) {
-        setState(() {
-          _traitTypes = traitTypes;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading trait types: $e');
-    }
   }
 }
