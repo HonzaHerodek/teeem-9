@@ -35,11 +35,11 @@ class DimmingConfig {
 
   const DimmingConfig({
     this.dimmingColor = Colors.black,
-    this.dimmingStrength = 0.5,
+    this.dimmingStrength = 0.7,
     this.glowColor = Colors.white,
-    this.glowSpread = 4.0,
-    this.glowBlur = 8.0,
-    this.glowStrength = 0.3,
+    this.glowSpread = 16.0,
+    this.glowBlur = 32.0,
+    this.glowStrength = 0.5,
     this.excludeShape = DimmingExcludeShape.circle,
     this.borderRadius,
   });
@@ -181,8 +181,8 @@ class DimmingOverlay extends StatelessWidget {
   Widget _buildBackdropFilter() {
     return BackdropFilter(
       filter: ImageFilter.blur(
-        sigmaX: config.glowBlur * 0.25,
-        sigmaY: config.glowBlur * 0.25,
+        sigmaX: config.glowBlur * 0.5,
+        sigmaY: config.glowBlur * 0.5,
       ),
       child: Container(
         color: Colors.transparent,

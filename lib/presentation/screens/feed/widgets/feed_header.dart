@@ -3,6 +3,7 @@ import '../controllers/feed_header_controller.dart';
 import 'sections/feed_header_search_section.dart';
 import 'sections/feed_header_traits_section.dart';
 import 'sections/feed_header_profiles_section.dart';
+import 'sections/feed_header_groups_section.dart';
 import 'sections/feed_header_filters_section.dart';
 
 class FeedHeader extends StatelessWidget {
@@ -48,20 +49,23 @@ class FeedHeader extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // First row - Trait chips
+                      // First row - Profile miniatures
                       SizedBox(
-                        height: 35,
-                        child: FeedHeaderTraitsSection(
-                          headerController: headerController,
-                        ),
-                      ),
-                      const SizedBox(height: 9), // Spacing between rows
-                      // Second row - Profile miniatures
-                      SizedBox(
-                        height: 80, // Increased height for larger profile images and text
+                        height: 80,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: FeedHeaderProfilesSection(
+                            headerController: headerController,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 9), // Spacing between rows
+                      // Second row - Group chips
+                      SizedBox(
+                        height: 80,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: FeedHeaderGroupsSection(
                             headerController: headerController,
                           ),
                         ),
@@ -71,6 +75,14 @@ class FeedHeader extends StatelessWidget {
                       SizedBox(
                         height: 35,
                         child: FeedHeaderFiltersSection(
+                          headerController: headerController,
+                        ),
+                      ),
+                      const SizedBox(height: 9), // Spacing between rows
+                      // Fourth row - Trait chips
+                      SizedBox(
+                        height: 35,
+                        child: FeedHeaderTraitsSection(
                           headerController: headerController,
                         ),
                       ),

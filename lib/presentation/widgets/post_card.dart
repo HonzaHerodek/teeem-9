@@ -8,6 +8,7 @@ import 'post_header.dart';
 import 'step_indicators/step_dots.dart';
 import 'step_indicators/step_miniatures.dart';
 import 'step_carousel.dart';
+import 'common/shadowed_text.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -121,23 +122,18 @@ class _PostCardState extends State<PostCard>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    widget.post.title,
+                  ShadowedText(
+                    text: widget.post.title,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    widget.post.description,
+                  ShadowedText(
+                    text: widget.post.description,
+                    fontSize: 16,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
+                    maxLines: 3,
                   ),
                 ],
               ),
@@ -175,13 +171,10 @@ class _PostCardState extends State<PostCard>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Rate this post',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      const ShadowedText(
+                        text: 'Rate this post',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                       const SizedBox(height: 16),
                       RatingStars(
