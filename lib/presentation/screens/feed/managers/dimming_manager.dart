@@ -26,8 +26,8 @@ class DimmingManager {
       dimmingColor: Colors.black,
       dimmingStrength: 0.7,
       glowColor: Colors.blue,
-      glowSpread: 16.0,
-      glowBlur: 32.0,
+      glowSpread: 4.0,
+      glowBlur: 8.0,
       glowStrength: 0.5,
     );
 

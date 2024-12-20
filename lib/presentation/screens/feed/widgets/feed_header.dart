@@ -4,7 +4,7 @@ import 'sections/feed_header_search_section.dart';
 import 'sections/feed_header_traits_section.dart';
 import 'sections/feed_header_profiles_section.dart';
 import 'sections/feed_header_groups_section.dart';
-import 'sections/feed_header_filters_section.dart';
+import 'sections/feed_header_special_filters_section.dart';
 
 class FeedHeader extends StatelessWidget {
   final FeedHeaderController headerController;
@@ -71,10 +71,10 @@ class FeedHeader extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 9), // Spacing between rows
-                      // Third row - Relation filter chips
+                      // Third row - Special relation filter chips
                       SizedBox(
                         height: 35,
-                        child: FeedHeaderFiltersSection(
+                        child: FeedHeaderSpecialFiltersSection(
                           headerController: headerController,
                         ),
                       ),

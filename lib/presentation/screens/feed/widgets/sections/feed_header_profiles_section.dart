@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/filter_type.dart';
 import '../profile_miniature_chip.dart';
 import '../../controllers/feed_header_controller.dart';
+import 'feed_header_filters_section.dart';
 
 class FeedHeaderProfilesSection extends StatelessWidget {
   final FeedHeaderController headerController;
@@ -13,38 +14,43 @@ class FeedHeaderProfilesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!headerController.state.isSearchVisible) {
-      return const SizedBox.shrink();
-    }
-
     // Map profile types to their corresponding filter types
     final profileFilters = [
-      FilterType.following,
-      FilterType.similar,
-      FilterType.responded,
-      FilterType.followers,
-      FilterType.recentlyActive,
-      FilterType.topCreators,
-      FilterType.recommended,
-      FilterType.newUsers,
+      FilterType.individual1,
+      FilterType.individual2,
+      FilterType.individual3,
+      FilterType.individual4,
+      FilterType.individual5,
+      FilterType.individual6,
+      FilterType.individual7,
+      FilterType.individual8,
     ];
 
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      physics: const ClampingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: profileFilters.length,
-      itemBuilder: (context, index) {
-        final filterType = profileFilters[index];
-        return ProfileMiniatureChip(
-          label: filterType.displayName,
-          onTap: () {
-            headerController.selectFilter(filterType);
-          },
-          isSelected: headerController.state.activeFilterType == filterType,
-          spacing: 20, // Increased spacing between chips
-        );
-      },
+    // Map of usernames for each individual
+    final usernames = {
+      FilterType.individual1: 'alex_morgan',
+      FilterType.individual2: 'sophia.lee',
+      FilterType.individual3: 'james_walker',
+      FilterType.individual4: 'olivia_chen',
+      FilterType.individual5: 'ethan_brown',
+      FilterType.individual6: 'mia_patel',
+      FilterType.individual7: 'lucas_kim',
+      FilterType.individual8: 'emma_davis',
+    };
+
+    final profileChips = profileFilters.map((filterType) => ProfileMiniatureChip(
+      label: usernames[filterType]!,
+      onTap: () => headerController.selectFilter(filterType),
+      isSelected: headerController.state.activeFilterType == filterType,
+      spacing: 20,
+    )).toList();
+
+    // Use the reusable filter section for layout
+    return FeedHeaderFiltersSection(
+      headerController: headerController,
+      height: 80,
+      spacing: 20,
+      children: profileChips,
     );
   }
 }

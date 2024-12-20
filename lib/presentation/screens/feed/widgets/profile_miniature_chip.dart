@@ -17,6 +17,30 @@ class ProfileMiniatureChip extends StatelessWidget {
     this.spacing = 15,
   });
 
+  String _getImageUrl() {
+    // Use different images for each individual
+    switch (label) {
+      case 'alex_morgan':
+        return 'https://i.pravatar.cc/150?img=1';  // Professional looking man
+      case 'sophia.lee':
+        return 'https://i.pravatar.cc/150?img=5';  // Young woman with glasses
+      case 'james_walker':
+        return 'https://i.pravatar.cc/150?img=3';  // Casual style man
+      case 'olivia_chen':
+        return 'https://i.pravatar.cc/150?img=9';  // Creative looking woman
+      case 'ethan_brown':
+        return 'https://i.pravatar.cc/150?img=13'; // Business casual man
+      case 'mia_patel':
+        return 'https://i.pravatar.cc/150?img=10'; // Professional woman
+      case 'lucas_kim':
+        return 'https://i.pravatar.cc/150?img=15'; // Young professional man
+      case 'emma_davis':
+        return 'https://i.pravatar.cc/150?img=11'; // Friendly looking woman
+      default:
+        return 'https://i.pravatar.cc/150?img=7';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -37,13 +61,7 @@ class ProfileMiniatureChip extends StatelessWidget {
               ),
               child: ClipOval(
                 child: Image.network(
-                  label == 'I follow'
-                      ? 'https://i.pravatar.cc/150?img=1'
-                      : label == 'Similar to me'
-                          ? 'https://i.pravatar.cc/150?img=2'
-                          : label == 'I responded to'
-                              ? 'https://i.pravatar.cc/150?img=3'
-                              : 'https://i.pravatar.cc/150?img=4',
+                  _getImageUrl(),
                   width: size,
                   height: size,
                   fit: BoxFit.cover,

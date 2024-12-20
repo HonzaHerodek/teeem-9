@@ -37,8 +37,8 @@ class DimmingConfig {
     this.dimmingColor = Colors.black,
     this.dimmingStrength = 0.7,
     this.glowColor = Colors.white,
-    this.glowSpread = 16.0,
-    this.glowBlur = 32.0,
+    this.glowSpread = 4.0,
+    this.glowBlur = 8.0,
     this.glowStrength = 0.5,
     this.excludeShape = DimmingExcludeShape.circle,
     this.borderRadius,
@@ -119,9 +119,15 @@ class DimmingOverlay extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Base dimming layer
-        Container(
-          color: config.dimmingColor.withOpacity(config.dimmingStrength),
+        // Base dimming layer with blur
+        BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: 2.0,
+            sigmaY: 2.0,
+          ),
+          child: Container(
+            color: config.dimmingColor.withOpacity(config.dimmingStrength),
+          ),
         ),
         // Excluded elements with glow
         ...excludedKeys.map((key) => _buildExcludedElement(key, context)),
@@ -181,8 +187,8 @@ class DimmingOverlay extends StatelessWidget {
   Widget _buildBackdropFilter() {
     return BackdropFilter(
       filter: ImageFilter.blur(
-        sigmaX: config.glowBlur * 0.5,
-        sigmaY: config.glowBlur * 0.5,
+        sigmaX: 2.0,
+        sigmaY: 2.0,
       ),
       child: Container(
         color: Colors.transparent,
