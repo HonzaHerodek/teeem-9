@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../controllers/feed_header_controller.dart';
+import '../controllers/feed_controller.dart';
 import 'sections/feed_header_search_section.dart';
 import 'sections/feed_header_traits_section.dart';
 import 'sections/feed_header_profiles_section.dart';
@@ -8,10 +9,12 @@ import 'sections/feed_header_special_filters_section.dart';
 
 class FeedHeader extends StatelessWidget {
   final FeedHeaderController headerController;
+  final FeedController? feedController;
 
   const FeedHeader({
     super.key,
     required this.headerController,
+    this.feedController,
   });
 
   @override
@@ -30,7 +33,10 @@ class FeedHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Header row with buttons and search bar
-                FeedHeaderSearchSection(headerController: headerController),
+                FeedHeaderSearchSection(
+                  headerController: headerController,
+                  feedController: feedController,
+                ),
 
                 // Chips below header
                 AnimatedSwitcher(

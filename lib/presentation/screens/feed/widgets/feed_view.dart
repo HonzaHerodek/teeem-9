@@ -223,7 +223,10 @@ class _FeedViewState extends State<FeedView> {
           ),
           Stack(
             children: [
-              FeedHeader(headerController: _headerController),
+              FeedHeader(
+                headerController: _headerController,
+                feedController: _feedController,
+              ),
               FeedNotificationOverlay(
                 headerController: _headerController,
                 feedController: _feedController,

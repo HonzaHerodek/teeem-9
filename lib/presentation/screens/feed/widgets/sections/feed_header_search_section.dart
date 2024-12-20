@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../data/models/traits/trait_type_model.dart';
+import '../../../../widgets/notifications/notification_bar.dart';
 import '../../../../widgets/notifications/notification_icon.dart';
 import '../../controllers/feed_header_controller.dart';
+import '../../controllers/feed_controller.dart';
 import '../../feed_bloc/feed_bloc.dart';
 import '../../feed_bloc/feed_event.dart';
 import '../feed_search_bar.dart';
@@ -10,10 +12,12 @@ import '../target_icon.dart';
 
 class FeedHeaderSearchSection extends StatelessWidget {
   final FeedHeaderController headerController;
+  final FeedController? feedController;
 
   const FeedHeaderSearchSection({
     super.key,
     required this.headerController,
+    this.feedController,
   });
 
   void _handleSearch(BuildContext context, String query) {
@@ -53,7 +57,7 @@ class FeedHeaderSearchSection extends StatelessWidget {
             ),
           ),
 
-          // Center Column: Search Bar
+          // Center Column: Search Bar or Notification Bar
           Expanded(
             child: Center(
               child: AnimatedSwitcher(
@@ -68,10 +72,19 @@ class FeedHeaderSearchSection extends StatelessWidget {
                     ),
                   );
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: _buildSearchBar(context),
-                ),
+                child: headerController.state.isNotificationMenuOpen
+                    ? NotificationBar(
+                        key: ValueKey('notification_bar'),
+                        notifications: headerController.notifications ?? [],
+                        onNotificationSelected: (notification) {
+                          headerController.selectNotification(notification, feedController);
+                        },
+                        onClose: headerController.toggleNotificationMenu,
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: _buildSearchBar(context),
+                      ),
               ),
             ),
           ),
