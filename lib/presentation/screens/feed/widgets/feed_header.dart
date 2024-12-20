@@ -10,10 +10,14 @@ import 'sections/feed_header_special_filters_section.dart';
 class FeedHeader extends StatelessWidget {
   final FeedHeaderController headerController;
   final FeedController? feedController;
+  final GlobalKey searchBarKey;
+  final GlobalKey filtersKey;
 
   const FeedHeader({
     super.key,
     required this.headerController,
+    required this.searchBarKey,
+    required this.filtersKey,
     this.feedController,
   });
 
@@ -36,6 +40,8 @@ class FeedHeader extends StatelessWidget {
                 FeedHeaderSearchSection(
                   headerController: headerController,
                   feedController: feedController,
+                  searchBarKey: searchBarKey,
+                  filtersKey: filtersKey,
                 ),
 
                 // Chips below header

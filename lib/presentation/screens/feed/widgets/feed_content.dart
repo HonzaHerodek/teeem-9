@@ -40,14 +40,19 @@ class FeedContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Update the feed controller's item service with current data
-    feedController.updateItemService(
-      FeedItemService(
-        posts: posts,
-        projects: projects,
-        isCreatingPost: isCreatingPost,
-      )
-    );
+    // Only update item service if data has changed
+    final currentService = feedController.itemService;
+    if (currentService.posts != posts || 
+        currentService.projects != projects || 
+        currentService.isCreatingPost != isCreatingPost) {
+      feedController.updateItemService(
+        FeedItemService(
+          posts: posts,
+          projects: projects,
+          isCreatingPost: isCreatingPost,
+        )
+      );
+    }
 
     final itemService = feedController.itemService;
 
@@ -81,8 +86,12 @@ class FeedContent extends StatelessWidget {
                 final project = itemService.getProjectAtPosition(adjustedIndex);
                 if (project != null) {
                   final isSelected = project.id == selectedProjectId;
+                  // Only use selectedItemKey if the project matches the selected project ID
+                  final key = isSelected && selectedItemKey != null 
+                      ? selectedItemKey 
+                      : ValueKey(project.id);
                   return FeedItem(
-                    key: isSelected ? selectedItemKey : ValueKey(project.id),
+                    key: key,
                     project: project,
                     feedController: feedController,
                     isSelected: isSelected,
@@ -93,8 +102,12 @@ class FeedContent extends StatelessWidget {
                 final post = itemService.getPostAtPosition(adjustedIndex);
                 if (post != null) {
                   final isSelected = post.id == selectedPostId;
+                  // Only use selectedItemKey if the post matches the selected post ID
+                  final key = isSelected && selectedItemKey != null 
+                      ? selectedItemKey 
+                      : ValueKey(post.id);
                   return FeedItem(
-                    key: isSelected ? selectedItemKey : ValueKey(post.id),
+                    key: key,
                     post: post,
                     currentUserId: currentUserId,
                     feedController: feedController,

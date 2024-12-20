@@ -29,7 +29,8 @@ class FeedItemService {
     if (adjustedIndex == 0) return true; // First project
     return projects.length > 1 &&
         adjustedIndex > 1 &&
-        ((adjustedIndex - 1) % 6 == 5); // Every 6th position after first project
+        ((adjustedIndex - 1) % 6 ==
+            5); // Every 6th position after first project
   }
 
   int getProjectIndex(int adjustedIndex) {
@@ -59,5 +60,27 @@ class FeedItemService {
     if (isProjectPosition(adjustedIndex)) return null;
     final postIndex = getPostIndex(adjustedIndex);
     return isValidPostIndex(postIndex) ? posts[postIndex] : null;
+  }
+
+  // Helper method to find the feed position for a specific post
+  int? getFeedPositionForPost(String postId) {
+    // First find the post in the raw list
+    final rawIndex = posts.indexWhere((p) => p.id == postId);
+    if (rawIndex == -1) return null;
+
+    // Start with linear search since it's most reliable
+    for (int i = 0; i < totalItemCount; i++) {
+      // Skip project positions and creating post position
+      if (isCreatingPostPosition(i) || isProjectPosition(i)) {
+        continue;
+      }
+      
+      final post = getPostAtPosition(i);
+      if (post?.id == postId) {
+        return i;
+      }
+    }
+    
+    return null;
   }
 }

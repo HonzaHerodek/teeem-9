@@ -56,9 +56,9 @@ class FeedMainContent extends StatelessWidget {
         }
 
         if (state is FeedSuccess) {
-          // Use ValueKey to force rebuild when selection changes
+          // Only use notification ID for key to prevent unnecessary rebuilds
           return KeyedSubtree(
-            key: ValueKey('${selectedNotification?.id}_${selectedItemKey?.hashCode}'),
+            key: ValueKey(selectedNotification?.id),
             child: MediaQuery.removePadding(
               context: context,
               removeTop: true,

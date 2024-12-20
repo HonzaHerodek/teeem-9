@@ -7,6 +7,8 @@ class DimmingManager {
   final FeedHeaderController headerController;
   final GlobalKey plusActionButtonKey;
   final GlobalKey profileButtonKey;
+  final GlobalKey searchBarKey;
+  final GlobalKey filtersKey;
   final Function(
       {required bool isDimmed,
       required List<GlobalKey> excludedKeys,
@@ -17,6 +19,8 @@ class DimmingManager {
     required this.headerController,
     required this.plusActionButtonKey,
     required this.profileButtonKey,
+    required this.searchBarKey,
+    required this.filtersKey,
     required this.onDimmingUpdate,
   });
 
@@ -61,26 +65,39 @@ class DimmingManager {
   }) {
     final keys = <GlobalKey>[];
     
-    // Exclude plus button during search/target or when profile panel is open
+    // Always exclude plus button during search/target or when profile panel is open
     if (isSearchVisible || isProfileOpen) {
       keys.add(plusActionButtonKey);
     }
     
-    // Add target icon when search is visible
+    // Search/Target mode exclusions
     if (isSearchVisible) {
-      keys.add(headerController.targetIconKey);
+      keys.add(headerController.targetIconKey); // Target icon
+      keys.add(searchBarKey); // Search bar
+      keys.add(filtersKey); // Filter section
     }
     
-    // Exclude profile button for profile notifications
-    if (selectedNotification?.type == NotificationType.profile) {
-      keys.add(profileButtonKey);
+    // Notification mode exclusions
+    if (headerController.state.isNotificationMenuOpen) {
+      keys.add(headerController.notificationBarKey); // Notification bar
+      
+      // Add selected item key if it exists and notification is not for profile
+      if (selectedItemKey != null && 
+          selectedNotification != null && 
+          selectedNotification.type != NotificationType.profile) {
+        keys.add(selectedItemKey);
+      }
+      
+      // Exclude profile button for profile notifications
+      if (selectedNotification?.type == NotificationType.profile) {
+        keys.add(profileButtonKey);
+      }
     }
-
-    // Add selected item key if it exists and notification is not for profile
-    if (selectedItemKey != null && 
-        selectedNotification != null && 
-        selectedNotification.type != NotificationType.profile) {
-      keys.add(selectedItemKey);
+    
+    // Profile/Sliding panel mode exclusions
+    if (isProfileOpen) {
+      keys.add(plusActionButtonKey); // Plus button
+      keys.add(headerController.targetIconKey); // Target/search button
     }
 
     return keys;
@@ -92,13 +109,27 @@ class DimmingManager {
   }) {
     // Delay dimming update slightly to ensure layout is complete
     Future.delayed(const Duration(milliseconds: 100), () {
-      final RenderBox? targetBox = headerController.targetIconKey.currentContext
-          ?.findRenderObject() as RenderBox?;
-      final Offset? targetPosition = targetBox?.localToGlobal(Offset.zero);
-
       final isSearchVisible = headerController.state.isSearchVisible;
       final isNotificationMenuOpen = headerController.state.isNotificationMenuOpen;
       final selectedNotification = headerController.selectedNotification;
+
+      // Get positions of relevant elements
+      final RenderBox? targetBox = headerController.targetIconKey.currentContext
+          ?.findRenderObject() as RenderBox?;
+      final RenderBox? plusBox = plusActionButtonKey.currentContext
+          ?.findRenderObject() as RenderBox?;
+
+      // Calculate source position for dimming effect
+      Offset? source;
+      if (isSearchVisible) {
+        if (plusBox != null) {
+          final plusPosition = plusBox.localToGlobal(Offset.zero);
+          source = plusPosition + Offset(plusBox.size.width / 2, plusBox.size.height / 2);
+        } else if (targetBox != null) {
+          final targetPosition = targetBox.localToGlobal(Offset.zero);
+          source = targetPosition + Offset(targetBox.size.width / 2, targetBox.size.height / 2);
+        }
+      }
 
       onDimmingUpdate(
         isDimmed: isSearchVisible || isProfileOpen || isNotificationMenuOpen,
@@ -108,9 +139,7 @@ class DimmingManager {
           selectedItemKey: selectedItemKey,
           selectedNotification: selectedNotification,
         ),
-        source: isSearchVisible && targetPosition != null
-            ? targetPosition + Offset(targetBox!.size.width / 2, targetBox.size.height / 2)
-            : null,
+        source: source,
         config: _getConfigForNotification(selectedNotification),
       );
     });

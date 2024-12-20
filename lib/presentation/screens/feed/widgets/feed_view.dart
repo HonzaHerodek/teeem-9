@@ -31,32 +31,71 @@ class _FeedViewState extends State<FeedView> {
   DimmingConfig _dimmingConfig = const DimmingConfig();
   List<GlobalKey> _excludedKeys = [];
   Offset? _dimmingSource;
-  
+
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<InFeedPostCreationState> _postCreationKey = GlobalKey();
   final GlobalKey _plusActionButtonKey = GlobalKey();
   final GlobalKey _profileButtonKey = GlobalKey();
+  final GlobalKey _searchBarKey = GlobalKey();
+  final GlobalKey _filtersKey = GlobalKey();
   GlobalKey? _selectedItemKey;
-  
+
   late final FeedHeaderController _headerController;
   late final FeedPositionTracker _positionTracker;
   late final FeedController _feedController;
   late final DimmingManager _dimmingManager;
+
+  Future<void> _tryMoveToItem(String itemId, bool isProject,
+      [int attempts = 0]) async {
+    if (attempts >= 5) return; // Give up after more attempts
+
+    if (!mounted) return;
+
+    // Try to find and scroll to item
+    final foundIndex =
+        await _feedController.moveToItem(itemId, isProject: isProject);
+
+    if (mounted) {
+      if (foundIndex != null) {
+        // Create key and update dimming only after item is found and scrolled to
+        setState(() {
+          _selectedItemKey = GlobalKey();
+        });
+
+        // Wait for next frame to ensure the key is properly attached
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _dimmingManager.updateDimming(
+              isProfileOpen: _isProfileOpen,
+              selectedItemKey: _selectedItemKey,
+            );
+          }
+        });
+      } else {
+        // If item not found, wait a bit longer and try again
+        await Future.delayed(const Duration(milliseconds: 200));
+        if (mounted && attempts < 4) {
+          _tryMoveToItem(itemId, isProject, attempts + 1);
+        }
+      }
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _headerController = FeedHeaderController();
     _positionTracker = FeedPositionTracker(scrollController: _scrollController);
-    
+
     // Set initial padding
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final topPadding = MediaQuery.of(context).padding.top;
       const headerBaseHeight = 64.0;
       const chipsHeight = 96.0;
-      _positionTracker.setTopPadding(topPadding + headerBaseHeight + chipsHeight);
+      _positionTracker
+          .setTopPadding(topPadding + headerBaseHeight + chipsHeight);
     });
-    
+
     final feedBloc = context.read<FeedBloc>();
     _feedController = FeedController(
       feedBloc: feedBloc,
@@ -68,36 +107,39 @@ class _FeedViewState extends State<FeedView> {
     feedBloc.stream.listen((state) {
       if (state is FeedSuccess) {
         final notification = _headerController.selectedNotification;
-        if (notification != null && notification.type != NotificationType.profile) {
-          final itemId = notification.type == NotificationType.post 
-              ? notification.postId! 
+        if (notification != null &&
+            notification.type != NotificationType.profile) {
+          final itemId = notification.type == NotificationType.post
+              ? notification.postId!
               : notification.projectId!;
-          
+
           final isProject = notification.type == NotificationType.project;
-          
-          // Create new key for selection
-          setState(() {
-            _selectedItemKey = GlobalKey();
-          });
-          
-          // Move to item after key is created
-          _feedController.moveToItem(itemId, isProject: isProject).then((_) {
-            // Update dimming after movement is complete
+
+          // Update feed controller with latest data first
+          _feedController.updateItemService(
+            FeedItemService(
+              posts: state.posts,
+              projects: state.projects,
+              isCreatingPost: _isCreatingPost,
+            ),
+          );
+
+          // Wait for feed to be ready before trying to find item
+          Future.delayed(const Duration(milliseconds: 100), () {
             if (mounted) {
-              _dimmingManager.updateDimming(
-                isProfileOpen: _isProfileOpen,
-                selectedItemKey: _selectedItemKey,
-              );
+              _tryMoveToItem(itemId, isProject);
             }
           });
         }
       }
     });
-    
+
     _dimmingManager = DimmingManager(
       headerController: _headerController,
       plusActionButtonKey: _plusActionButtonKey,
       profileButtonKey: _profileButtonKey,
+      searchBarKey: _searchBarKey,
+      filtersKey: _filtersKey,
       onDimmingUpdate: ({
         required bool isDimmed,
         required List<GlobalKey> excludedKeys,
@@ -114,7 +156,7 @@ class _FeedViewState extends State<FeedView> {
         }
       },
     );
-    
+
     _scrollController.addListener(_onScroll);
     _headerController.addListener(_updateDimming);
   }
@@ -129,37 +171,33 @@ class _FeedViewState extends State<FeedView> {
   }
 
   void _updateDimming() {
-    final isNotificationMenuOpen = _headerController.state.isNotificationMenuOpen;
+    final isNotificationMenuOpen =
+        _headerController.state.isNotificationMenuOpen;
+    final isSearchVisible = _headerController.state.isSearchVisible;
     final selectedNotification = _headerController.selectedNotification;
-    
+
+    // Handle notification selection
     if (selectedNotification != null && isNotificationMenuOpen) {
       if (_selectedItemKey == null) {
         setState(() {
           _selectedItemKey = GlobalKey();
         });
-        
-        // Wait for next frame to ensure key is properly attached
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _dimmingManager.updateDimming(
-              isProfileOpen: _isProfileOpen,
-              selectedItemKey: _selectedItemKey,
-            );
-          }
-        });
       }
-    } else {
-      if (_selectedItemKey != null) {
-        setState(() {
-          _selectedItemKey = null;
-        });
-        
+    } else if (_selectedItemKey != null) {
+      setState(() {
+        _selectedItemKey = null;
+      });
+    }
+
+    // Always update dimming to handle all state changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
         _dimmingManager.updateDimming(
           isProfileOpen: _isProfileOpen,
-          selectedItemKey: null,
+          selectedItemKey: _selectedItemKey,
         );
       }
-    }
+    });
   }
 
   void _onScroll() {
@@ -232,45 +270,61 @@ class _FeedViewState extends State<FeedView> {
     const chipsHeight = 96.0;
 
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          AnimatedGradientBackground(
-            child: FeedMainContent(
-              scrollController: _scrollController,
-              feedController: _feedController,
-              isCreatingPost: _isCreatingPost,
-              postCreationKey: _postCreationKey,
-              onCancel: _toggleCreatePost,
-              onComplete: _handlePostCreationComplete,
-              topPadding: topPadding + headerBaseHeight + chipsHeight,
-              selectedItemKey: _selectedItemKey,
-              selectedNotification: _headerController.selectedNotification,
-            ),
-          ).withDimming(
-            isDimmed: _isDimmed,
-            config: _dimmingConfig,
-            excludedKeys: _excludedKeys,
-            source: _dimmingSource,
-          ),
-          FeedHeader(
-            headerController: _headerController,
-            feedController: _feedController,
-          ),
-          FeedActionButtons(
-            plusActionButtonKey: _plusActionButtonKey,
-            profileButtonKey: _profileButtonKey,
-            isCreatingPost: _isCreatingPost,
-            onProfileTap: _toggleProfile,
-            onActionButtonTap: _handleActionButton,
-          ),
-          SlidingPanel(
-            isOpen: _isProfileOpen,
-            onClose: _toggleProfile,
-            excludeFromOverlay: _getExcludedAreas(context),
-            child: const ProfileScreen(),
-          ),
-        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Update dimming when layout changes (e.g. keyboard)
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _dimmingManager.updateDimming(
+                isProfileOpen: _isProfileOpen,
+                selectedItemKey: _selectedItemKey,
+              );
+            }
+          });
+
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              AnimatedGradientBackground(
+                child: FeedMainContent(
+                  scrollController: _scrollController,
+                  feedController: _feedController,
+                  isCreatingPost: _isCreatingPost,
+                  postCreationKey: _postCreationKey,
+                  onCancel: _toggleCreatePost,
+                  onComplete: _handlePostCreationComplete,
+                  topPadding: topPadding + headerBaseHeight + chipsHeight,
+                  selectedItemKey: _selectedItemKey,
+                  selectedNotification: _headerController.selectedNotification,
+                ),
+              ).withDimming(
+                isDimmed: _isDimmed,
+                config: _dimmingConfig,
+                excludedKeys: _excludedKeys,
+                source: _dimmingSource,
+              ),
+              FeedHeader(
+                headerController: _headerController,
+                feedController: _feedController,
+                searchBarKey: _searchBarKey,
+                filtersKey: _filtersKey,
+              ),
+              FeedActionButtons(
+                plusActionButtonKey: _plusActionButtonKey,
+                profileButtonKey: _profileButtonKey,
+                isCreatingPost: _isCreatingPost,
+                onProfileTap: _toggleProfile,
+                onActionButtonTap: _handleActionButton,
+              ),
+              SlidingPanel(
+                isOpen: _isProfileOpen,
+                onClose: _toggleProfile,
+                excludeFromOverlay: _getExcludedAreas(context),
+                child: const ProfileScreen(),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

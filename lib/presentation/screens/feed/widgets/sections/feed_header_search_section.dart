@@ -13,10 +13,14 @@ import '../target_icon.dart';
 class FeedHeaderSearchSection extends StatelessWidget {
   final FeedHeaderController headerController;
   final FeedController? feedController;
+  final GlobalKey searchBarKey;
+  final GlobalKey filtersKey;
 
   const FeedHeaderSearchSection({
     super.key,
     required this.headerController,
+    required this.searchBarKey,
+    required this.filtersKey,
     this.feedController,
   });
 
@@ -30,11 +34,14 @@ class FeedHeaderSearchSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return FeedSearchBar(
-      key: ValueKey(headerController.state.activeFilterType),
-      filterType: headerController.state.activeFilterType!,
-      onSearch: (query) => _handleSearch(context, query),
-      onClose: headerController.closeSearch,
+    return Container(
+      key: filtersKey,
+      child: FeedSearchBar(
+        key: searchBarKey,
+        filterType: headerController.state.activeFilterType!,
+        onSearch: (query) => _handleSearch(context, query),
+        onClose: headerController.closeSearch,
+      ),
     );
   }
 
