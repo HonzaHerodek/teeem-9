@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/models/post_model.dart';
 import '../../../core/utils/step_type_utils.dart';
 import '../../../core/utils/step_indicators_utils.dart';
+import '../common/honeycomb_grid.dart';
 
 class StepMiniatures extends StatefulWidget {
   final List<PostStep> steps;
@@ -145,52 +146,6 @@ class _StepMiniaturesState extends State<StepMiniatures> {
     return baseShadows;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final itemWidth = 72.0;
-          final screenWidth = constraints.maxWidth;
-          final totalContentWidth = widget.steps.length * itemWidth;
-          final sidePadding = totalContentWidth <= screenWidth
-              ? (screenWidth - totalContentWidth) / 2
-              : itemWidth / 2;
-
-          return SingleChildScrollView(
-            controller: _scrollController,
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: sidePadding),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(
-                  widget.steps.length,
-                  (index) {
-                    final color = StepTypeUtils.getColorForStepType(
-                        widget.steps[index].type);
-                    final icon = StepTypeUtils.getIconForStepType(
-                        widget.steps[index].type);
-                    final isSelected = index == widget.currentStep;
-
-                    return _buildStepMiniature(
-                      index: index,
-                      color: color,
-                      icon: icon,
-                      isSelected: isSelected,
-                    );
-                  },
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildStepMiniature({
     required int index,
     required Color color,
@@ -204,33 +159,81 @@ class _StepMiniaturesState extends State<StepMiniatures> {
       child: Container(
         width: 72.0,
         height: 72.0,
-        alignment: Alignment.center,
-        child: Container(
-          width: 64.0,
-          height: 64.0,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: _createDiffusedShadows(color, isSelected),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  color: color.withOpacity(opacity),
-                  size: 24,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${index + 1}',
-                  style: TextStyle(
-                    color: color.withOpacity(opacity),
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
+        padding: const EdgeInsets.all(4.0),
+        child: ClipPath(
+          clipper: HexagonClipper(),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color.withOpacity(0.9),
+                  color.withOpacity(0.7),
+                ],
+              ),
+              boxShadow: _createDiffusedShadows(color, isSelected),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    color: Colors.white.withOpacity(opacity),
+                    size: 24,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(opacity),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: HoneycombGrid(
+            cellSize: 72.0,
+            spacing: 8.0,
+            config: HoneycombConfig(
+              layout: HoneycombLayout.horizontalLine,
+              curvature: 0.2, // Slight curve for visual interest
+            ),
+            children: List.generate(
+              widget.steps.length,
+              (index) {
+                final color = StepTypeUtils.getColorForStepType(
+                    widget.steps[index].type);
+                final icon = StepTypeUtils.getIconForStepType(
+                    widget.steps[index].type);
+                final isSelected = index == widget.currentStep;
+
+                return _buildStepMiniature(
+                  index: index,
+                  color: color,
+                  icon: icon,
+                  isSelected: isSelected,
+                );
+              },
             ),
           ),
         ),

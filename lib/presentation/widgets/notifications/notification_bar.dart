@@ -20,18 +20,36 @@ class NotificationBar extends StatefulWidget {
 }
 
 class _NotificationBarState extends State<NotificationBar> {
-  late FixedExtentScrollController _scrollController;
+  PageController? _pageController;
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = FixedExtentScrollController();
+    _initializePageController();
+  }
+
+  @override
+  void didUpdateWidget(NotificationBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.notifications != oldWidget.notifications) {
+      _pageController?.dispose();
+      _initializePageController();
+    }
+  }
+
+  void _initializePageController() {
+    if (widget.notifications.isNotEmpty) {
+      _pageController = PageController();
+      widget.onNotificationSelected(widget.notifications[_currentIndex]);
+    } else {
+      _pageController = null;
+    }
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _pageController?.dispose();
     super.dispose();
   }
 
@@ -44,6 +62,45 @@ class _NotificationBarState extends State<NotificationBar> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.notifications.isEmpty) {
+      return Container(
+        key: widget.barKey,
+        height: 56,
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Colors.white.withOpacity(0.15),
+              Colors.white.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: Text(
+            'No notifications',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       key: widget.barKey,
       height: 56,
@@ -72,7 +129,7 @@ class _NotificationBarState extends State<NotificationBar> {
       ),
       child: Row(
         children: [
-          // Navigation arrows container
+          // Left arrow
           Container(
             width: 40,
             decoration: BoxDecoration(
@@ -84,63 +141,29 @@ class _NotificationBarState extends State<NotificationBar> {
                   Colors.white.withOpacity(0.1),
                 ],
               ),
-              borderRadius:
-                  const BorderRadius.horizontal(left: Radius.circular(28)),
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(28)),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // Up arrow
-                Expanded(
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: _currentIndex > 0
-                          ? () {
-                              _scrollController.animateToItem(
-                                _currentIndex - 1,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            }
-                          : null,
-                      child: Icon(
-                        Icons.keyboard_arrow_up,
-                        color: Colors.white.withOpacity(
-                          _currentIndex > 0 ? 1.0 : 0.5,
-                        ),
-                        size: 16,
-                      ),
-                    ),
+            child: Center(
+              child: GestureDetector(
+                onTap: _currentIndex > 0 && _pageController != null
+                    ? () {
+                        _pageController?.previousPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      }
+                    : null,
+                child: Icon(
+                  Icons.keyboard_arrow_left,
+                  color: Colors.white.withOpacity(
+                    _currentIndex > 0 ? 1.0 : 0.5,
                   ),
+                  size: 16,
                 ),
-                // Down arrow
-                Expanded(
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: _currentIndex < widget.notifications.length - 1
-                          ? () {
-                              _scrollController.animateToItem(
-                                _currentIndex + 1,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            }
-                          : null,
-                      child: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Colors.white.withOpacity(
-                          _currentIndex < widget.notifications.length - 1
-                              ? 1.0
-                              : 0.5,
-                        ),
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
+          
           // Notification count
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -152,36 +175,63 @@ class _NotificationBarState extends State<NotificationBar> {
               ),
             ),
           ),
-          // Notifications ListWheelScrollView
+          
+          // Notifications PageView
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: ListWheelScrollView.useDelegate(
-                controller: _scrollController,
-                itemExtent: 40,
-                perspective: 0.005,
-                diameterRatio: 2.0,
-                physics: const FixedExtentScrollPhysics(),
-                onSelectedItemChanged: _handleIndexChanged,
-                childDelegate: ListWheelChildBuilderDelegate(
-                  childCount: widget.notifications.length,
-                  builder: (context, index) {
-                    final notification = widget.notifications[index];
-                    return Center(
-                      child: Text(
-                        notification.title,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: _currentIndex == index
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: _handleIndexChanged,
+              itemCount: widget.notifications.length,
+              itemBuilder: (context, index) {
+                final notification = widget.notifications[index];
+                return Center(
+                  child: Text(
+                    notification.title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: _currentIndex == index
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          // Right arrow
+          Container(
+            width: 40,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.white.withOpacity(0.0),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
+              borderRadius: const BorderRadius.horizontal(right: Radius.circular(28)),
+            ),
+            child: Center(
+              child: GestureDetector(
+                onTap: _currentIndex < widget.notifications.length - 1 && _pageController != null
+                    ? () {
+                        _pageController?.nextPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      }
+                    : null,
+                child: Icon(
+                  Icons.keyboard_arrow_right,
+                  color: Colors.white.withOpacity(
+                    _currentIndex < widget.notifications.length - 1 ? 1.0 : 0.5,
+                  ),
+                  size: 16,
                 ),
               ),
             ),

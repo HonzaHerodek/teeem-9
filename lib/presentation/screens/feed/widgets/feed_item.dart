@@ -44,49 +44,59 @@ class FeedItem extends StatelessWidget {
     }
 
     if (project != null) {
-      return Container(
-        decoration: BoxDecoration(
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.3),
-              blurRadius: 8,
-              spreadRadius: 2,
+      return RepaintBoundary(
+        child: Container(
+          key: key,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected ? Border.all(
+              color: Colors.blue.withOpacity(0.5),
+              width: 2,
+            ) : null,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: ProjectCard(
+              project: project!,
+              onTap: () => feedController.selectProject(project!.id),
             ),
-          ] : null,
-        ),
-        child: ProjectCard(
-          project: project!,
-          onTap: () => feedController.selectProject(project!.id),
+          ),
         ),
       );
     }
 
     if (post != null && currentUserId != null) {
-      return Container(
-        decoration: BoxDecoration(
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.3),
-              blurRadius: 8,
-              spreadRadius: 2,
+      return RepaintBoundary(
+        child: Container(
+          key: key,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected ? Border.all(
+              color: Colors.blue.withOpacity(0.5),
+              width: 2,
+            ) : null,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: PostCard(
+              post: post!,
+              currentUserId: currentUserId!,
+              onLike: () => feedController.likePost(post!.id),
+              onComment: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Comments coming soon!')),
+                );
+              },
+              onShare: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Share feature coming soon!')),
+                );
+              },
+              onRate: (rating) => feedController.ratePost(post!.id, rating),
             ),
-          ] : null,
-        ),
-        child: PostCard(
-          post: post!,
-          currentUserId: currentUserId!,
-          onLike: () => feedController.likePost(post!.id),
-          onComment: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Comments coming soon!')),
-            );
-          },
-          onShare: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Share feature coming soon!')),
-            );
-          },
-          onRate: (rating) => feedController.ratePost(post!.id, rating),
+          ),
         ),
       );
     }

@@ -15,7 +15,6 @@ import '../../../../data/models/notification_model.dart';
 import '../managers/dimming_manager.dart';
 import 'feed_action_buttons.dart';
 import 'feed_header.dart';
-import 'feed_notification_overlay.dart';
 import 'feed_main_content.dart';
 
 class FeedView extends StatefulWidget {
@@ -49,6 +48,7 @@ class _FeedViewState extends State<FeedView> {
     super.initState();
     _headerController = FeedHeaderController();
     _positionTracker = FeedPositionTracker(scrollController: _scrollController);
+    
     // Set initial padding
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final topPadding = MediaQuery.of(context).padding.top;
@@ -56,6 +56,7 @@ class _FeedViewState extends State<FeedView> {
       const chipsHeight = 96.0;
       _positionTracker.setTopPadding(topPadding + headerBaseHeight + chipsHeight);
     });
+    
     final feedBloc = context.read<FeedBloc>();
     _feedController = FeedController(
       feedBloc: feedBloc,
@@ -73,7 +74,22 @@ class _FeedViewState extends State<FeedView> {
               : notification.projectId!;
           
           final isProject = notification.type == NotificationType.project;
-          _feedController.moveToItem(itemId, isProject: isProject);
+          
+          // Create new key for selection
+          setState(() {
+            _selectedItemKey = GlobalKey();
+          });
+          
+          // Move to item after key is created
+          _feedController.moveToItem(itemId, isProject: isProject).then((_) {
+            // Update dimming after movement is complete
+            if (mounted) {
+              _dimmingManager.updateDimming(
+                isProfileOpen: _isProfileOpen,
+                selectedItemKey: _selectedItemKey,
+              );
+            }
+          });
         }
       }
     });
@@ -88,12 +104,14 @@ class _FeedViewState extends State<FeedView> {
         required DimmingConfig config,
         Offset? source,
       }) {
-        setState(() {
-          _isDimmed = isDimmed;
-          _dimmingConfig = config;
-          _excludedKeys = excludedKeys;
-          _dimmingSource = source;
-        });
+        if (mounted) {
+          setState(() {
+            _isDimmed = isDimmed;
+            _dimmingConfig = config;
+            _excludedKeys = excludedKeys;
+            _dimmingSource = source;
+          });
+        }
       },
     );
     
@@ -114,20 +132,34 @@ class _FeedViewState extends State<FeedView> {
     final isNotificationMenuOpen = _headerController.state.isNotificationMenuOpen;
     final selectedNotification = _headerController.selectedNotification;
     
-    if (selectedNotification != null && isNotificationMenuOpen && _selectedItemKey == null) {
-      setState(() {
-        _selectedItemKey = GlobalKey();
-      });
-    } else if (!isNotificationMenuOpen) {
-      setState(() {
-        _selectedItemKey = null;
-      });
+    if (selectedNotification != null && isNotificationMenuOpen) {
+      if (_selectedItemKey == null) {
+        setState(() {
+          _selectedItemKey = GlobalKey();
+        });
+        
+        // Wait for next frame to ensure key is properly attached
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _dimmingManager.updateDimming(
+              isProfileOpen: _isProfileOpen,
+              selectedItemKey: _selectedItemKey,
+            );
+          }
+        });
+      }
+    } else {
+      if (_selectedItemKey != null) {
+        setState(() {
+          _selectedItemKey = null;
+        });
+        
+        _dimmingManager.updateDimming(
+          isProfileOpen: _isProfileOpen,
+          selectedItemKey: null,
+        );
+      }
     }
-
-    _dimmingManager.updateDimming(
-      isProfileOpen: _isProfileOpen,
-      selectedItemKey: _selectedItemKey,
-    );
   }
 
   void _onScroll() {
@@ -221,19 +253,9 @@ class _FeedViewState extends State<FeedView> {
             excludedKeys: _excludedKeys,
             source: _dimmingSource,
           ),
-          Stack(
-            children: [
-              FeedHeader(
-                headerController: _headerController,
-                feedController: _feedController,
-              ),
-              FeedNotificationOverlay(
-                headerController: _headerController,
-                feedController: _feedController,
-                topPadding: topPadding,
-                headerHeight: headerBaseHeight,
-              ),
-            ],
+          FeedHeader(
+            headerController: _headerController,
+            feedController: _feedController,
           ),
           FeedActionButtons(
             plusActionButtonKey: _plusActionButtonKey,

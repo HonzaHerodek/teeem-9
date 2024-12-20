@@ -60,17 +60,25 @@ class FeedPositionTracker extends ChangeNotifier {
   }
 
   Future<void> scrollToIndex(int index) async {
-    // Account for top padding and use a more reasonable item height
-    final targetOffset = _topPadding + (index * 200.0); // Using 200.0 as average item height
+    // Calculate estimated position
+    final estimatedItemHeight = 400.0; // Average height of a post/project
+    final targetOffset = _topPadding + (index * estimatedItemHeight);
     
-    // Ensure we don't scroll beyond content
+    // Get viewport dimensions
+    final viewportHeight = scrollController.position.viewportDimension;
     final maxScroll = scrollController.position.maxScrollExtent;
-    final safeOffset = targetOffset.clamp(0.0, maxScroll);
     
+    // Calculate position that will show item in upper portion of screen
+    final adjustedOffset = targetOffset - (viewportHeight * 0.2);
+    
+    // Ensure we don't scroll beyond bounds
+    final safeOffset = adjustedOffset.clamp(0.0, maxScroll);
+    
+    // Perform scroll with easing
     await scrollController.animateTo(
       safeOffset,
       duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
+      curve: Curves.easeInOutCubic,
     );
   }
 

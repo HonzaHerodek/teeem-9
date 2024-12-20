@@ -37,13 +37,13 @@ class DimmingManager {
 
     switch (notification.type) {
       case NotificationType.post:
-        return defaultConfig.copyWith(
-          excludeShape: DimmingExcludeShape.circle,
-        );
       case NotificationType.project:
         return defaultConfig.copyWith(
           excludeShape: DimmingExcludeShape.rectangle,
           borderRadius: BorderRadius.circular(12),
+          glowSpread: 8.0,
+          glowBlur: 16.0,
+          glowStrength: 0.3,
         );
       case NotificationType.profile:
       default:
@@ -55,20 +55,31 @@ class DimmingManager {
 
   List<GlobalKey> _getExcludedKeys({
     required bool isSearchVisible,
+    required bool isProfileOpen,
     GlobalKey? selectedItemKey,
     NotificationModel? selectedNotification,
   }) {
-    final keys = [
-      plusActionButtonKey,
-      if (isSearchVisible) headerController.targetIconKey,
-      // Exclude profile button for profile notifications
-      if (selectedNotification?.type == NotificationType.profile) profileButtonKey,
-    ];
+    final keys = <GlobalKey>[];
+    
+    // Exclude plus button during search/target or when profile panel is open
+    if (isSearchVisible || isProfileOpen) {
+      keys.add(plusActionButtonKey);
+    }
+    
+    // Add target icon when search is visible
+    if (isSearchVisible) {
+      keys.add(headerController.targetIconKey);
+    }
+    
+    // Exclude profile button for profile notifications
+    if (selectedNotification?.type == NotificationType.profile) {
+      keys.add(profileButtonKey);
+    }
 
+    // Add selected item key if it exists and notification is not for profile
     if (selectedItemKey != null && 
         selectedNotification != null && 
-        selectedNotification.type != NotificationType.profile &&
-        selectedItemKey.currentContext?.findRenderObject() != null) {
+        selectedNotification.type != NotificationType.profile) {
       keys.add(selectedItemKey);
     }
 
@@ -79,25 +90,29 @@ class DimmingManager {
     required bool isProfileOpen,
     GlobalKey? selectedItemKey,
   }) {
-    final RenderBox? targetBox = headerController.targetIconKey.currentContext
-        ?.findRenderObject() as RenderBox?;
-    final Offset? targetPosition = targetBox?.localToGlobal(Offset.zero);
+    // Delay dimming update slightly to ensure layout is complete
+    Future.delayed(const Duration(milliseconds: 100), () {
+      final RenderBox? targetBox = headerController.targetIconKey.currentContext
+          ?.findRenderObject() as RenderBox?;
+      final Offset? targetPosition = targetBox?.localToGlobal(Offset.zero);
 
-    final isSearchVisible = headerController.state.isSearchVisible;
-    final isNotificationMenuOpen = headerController.state.isNotificationMenuOpen;
-    final selectedNotification = headerController.selectedNotification;
+      final isSearchVisible = headerController.state.isSearchVisible;
+      final isNotificationMenuOpen = headerController.state.isNotificationMenuOpen;
+      final selectedNotification = headerController.selectedNotification;
 
-    onDimmingUpdate(
-      isDimmed: isSearchVisible || isProfileOpen || isNotificationMenuOpen,
-      excludedKeys: _getExcludedKeys(
-        isSearchVisible: isSearchVisible,
-        selectedItemKey: selectedItemKey,
-        selectedNotification: selectedNotification,
-      ),
-      source: isSearchVisible && targetPosition != null
-          ? targetPosition + Offset(targetBox!.size.width / 2, targetBox.size.height / 2)
-          : null,
-      config: _getConfigForNotification(selectedNotification),
-    );
+      onDimmingUpdate(
+        isDimmed: isSearchVisible || isProfileOpen || isNotificationMenuOpen,
+        excludedKeys: _getExcludedKeys(
+          isSearchVisible: isSearchVisible,
+          isProfileOpen: isProfileOpen,
+          selectedItemKey: selectedItemKey,
+          selectedNotification: selectedNotification,
+        ),
+        source: isSearchVisible && targetPosition != null
+            ? targetPosition + Offset(targetBox!.size.width / 2, targetBox.size.height / 2)
+            : null,
+        config: _getConfigForNotification(selectedNotification),
+      );
+    });
   }
 }

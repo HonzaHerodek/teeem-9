@@ -56,27 +56,31 @@ class FeedMainContent extends StatelessWidget {
         }
 
         if (state is FeedSuccess) {
-          return MediaQuery.removePadding(
-            context: context,
-            removeTop: true,
-            child: FeedContent(
-              scrollController: scrollController,
-              posts: state.posts,
-              projects: state.projects,
-              currentUserId: state.currentUserId,
-              isCreatingPost: isCreatingPost,
-              postCreationKey: postCreationKey,
-              onCancel: onCancel,
-              onComplete: onComplete,
-              topPadding: topPadding,
-              feedController: feedController,
-              selectedItemKey: selectedItemKey,
-              selectedPostId: selectedNotification?.type == NotificationType.post
-                  ? selectedNotification?.postId
-                  : null,
-              selectedProjectId: selectedNotification?.type == NotificationType.project
-                  ? selectedNotification?.projectId
-                  : null,
+          // Use ValueKey to force rebuild when selection changes
+          return KeyedSubtree(
+            key: ValueKey('${selectedNotification?.id}_${selectedItemKey?.hashCode}'),
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: true,
+              child: FeedContent(
+                scrollController: scrollController,
+                posts: state.posts,
+                projects: state.projects,
+                currentUserId: state.currentUserId,
+                isCreatingPost: isCreatingPost,
+                postCreationKey: postCreationKey,
+                onCancel: onCancel,
+                onComplete: onComplete,
+                topPadding: topPadding,
+                feedController: feedController,
+                selectedItemKey: selectedItemKey,
+                selectedPostId: selectedNotification?.type == NotificationType.post
+                    ? selectedNotification?.postId
+                    : null,
+                selectedProjectId: selectedNotification?.type == NotificationType.project
+                    ? selectedNotification?.projectId
+                    : null,
+              ),
             ),
           );
         }

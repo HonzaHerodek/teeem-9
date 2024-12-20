@@ -80,23 +80,25 @@ class FeedContent extends StatelessWidget {
                 // Check if this position should show a project
                 final project = itemService.getProjectAtPosition(adjustedIndex);
                 if (project != null) {
+                  final isSelected = project.id == selectedProjectId;
                   return FeedItem(
-                    key: project.id == selectedProjectId ? selectedItemKey : null,
+                    key: isSelected ? selectedItemKey : ValueKey(project.id),
                     project: project,
                     feedController: feedController,
-                    isSelected: project.id == selectedProjectId,
+                    isSelected: isSelected,
                   );
                 }
 
                 // Get post for this position
                 final post = itemService.getPostAtPosition(adjustedIndex);
                 if (post != null) {
+                  final isSelected = post.id == selectedPostId;
                   return FeedItem(
-                    key: post.id == selectedPostId ? selectedItemKey : null,
+                    key: isSelected ? selectedItemKey : ValueKey(post.id),
                     post: post,
                     currentUserId: currentUserId,
                     feedController: feedController,
-                    isSelected: post.id == selectedPostId,
+                    isSelected: isSelected,
                   );
                 }
 

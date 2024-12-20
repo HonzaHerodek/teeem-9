@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/post_model.dart';
 import '../../../data/models/step_type_model.dart';
+import '../common/honeycomb_grid.dart';
 
 class PostStepWidget extends StatefulWidget {
   final VoidCallback onRemove;
@@ -41,10 +42,8 @@ class PostStepWidgetState extends State<PostStepWidget>
   @override
   bool get wantKeepAlive => true;
 
-  // Add this getter to expose step type selection state
   bool get hasSelectedStepType => _selectedStepType != null;
 
-  // Public getter for _selectedStepType
   StepTypeModel? getSelectedStepType() {
     return _selectedStepType;
   }
@@ -52,7 +51,6 @@ class PostStepWidgetState extends State<PostStepWidget>
   @override
   void initState() {
     super.initState();
-    // Restore state if available
     if (_selectedStepType != null) {
       _initializeOptionControllers();
       _restoreOptionValues();
@@ -173,34 +171,46 @@ class PostStepWidgetState extends State<PostStepWidget>
     return GestureDetector(
       onTap: widget.enabled ? () => _onStepTypeSelected(type) : null,
       child: Container(
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          shape: BoxShape.circle,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _getIconData(type.icon),
-              color: Colors.white,
-              size: 32,
-            ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                type.name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+        padding: const EdgeInsets.all(4.0),
+        child: ClipPath(
+          clipper: HexagonClipper(),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  backgroundColor,
+                  backgroundColor.withOpacity(0.8),
+                ],
               ),
             ),
-          ],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  _getIconData(type.icon),
+                  color: Colors.white,
+                  size: 32,
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    type.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -320,18 +330,25 @@ class PostStepWidgetState extends State<PostStepWidget>
     return Padding(
       padding: const EdgeInsets.all(12),
       child: _selectedStepType == null
-          ? Column(
-              children: [
-                GridView.count(
-                  shrinkWrap: true,
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  children: widget.stepTypes
-                      .map((type) => _buildStepTypeMiniature(type))
-                      .toList(),
+          ? SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return HoneycombGrid(
+                      cellSize: 100,
+                      spacing: 8,
+                      config: HoneycombConfig.area(
+                        maxWidth: constraints.maxWidth,
+                        maxItemsPerRow: 3,
+                      ),
+                      children: widget.stepTypes
+                          .map((type) => _buildStepTypeMiniature(type))
+                          .toList(),
+                    );
+                  },
                 ),
-              ],
+              ),
             )
           : _buildStepForm(),
     );

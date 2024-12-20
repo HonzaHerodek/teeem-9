@@ -32,19 +32,50 @@ class FeedController extends ChangeNotifier {
   }
 
   void selectPost(String postId) {
-    positionTracker.updatePosition(
-      selectedItemId: postId,
-      isProject: false,
-    );
-    // Additional post selection logic can be added here
+    updateSelection(postId, isProject: false);
   }
 
   void selectProject(String projectId) {
-    positionTracker.updatePosition(
-      selectedItemId: projectId,
-      isProject: true,
-    );
+    updateSelection(projectId, isProject: true);
     feedBloc.add(FeedProjectSelected(projectId));
+  }
+
+  void updateSelection(String itemId, {required bool isProject}) {
+    // Update position tracker
+    positionTracker.updatePosition(
+      selectedItemId: itemId,
+      isProject: isProject,
+    );
+
+    // Find the item's index
+    int targetIndex = -1;
+    for (int i = 0; i < itemService.totalItemCount; i++) {
+      if (isProject) {
+        final project = itemService.getProjectAtPosition(i);
+        if (project?.id == itemId) {
+          targetIndex = i;
+          break;
+        }
+      } else {
+        final post = itemService.getPostAtPosition(i);
+        if (post?.id == itemId) {
+          targetIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (targetIndex != -1) {
+      // Update position with found index
+      positionTracker.updatePosition(
+        index: targetIndex,
+        selectedItemId: itemId,
+        isProject: isProject,
+      );
+    }
+
+    // Notify listeners to trigger UI updates
+    notifyListeners();
   }
 
   void selectStep(String itemId, int stepIndex) {
@@ -66,38 +97,39 @@ class FeedController extends ChangeNotifier {
   }
 
   Future<void> moveToItem(String itemId, {bool isProject = false}) async {
-    // Wait for next frame to ensure FeedBloc state is updated
-    await Future.microtask(() async {
-      int targetIndex = -1;
-      
-      // Try multiple times with small delays to find the item
-      // This helps when content is still loading or being updated
-      for (int attempt = 0; attempt < 3; attempt++) {
-        for (int i = 0; i < itemService.totalItemCount; i++) {
-          if (isProject) {
-            final project = itemService.getProjectAtPosition(i);
-            if (project?.id == itemId) {
-              targetIndex = i;
-              break;
-            }
-          } else {
-            final post = itemService.getPostAtPosition(i);
-            if (post?.id == itemId) {
-              targetIndex = i;
-              break;
-            }
-          }
-        }
-        
-        if (targetIndex != -1) {
-          await moveToPosition(targetIndex);
+    int targetIndex = -1;
+    
+    // Find the item's index
+    for (int i = 0; i < itemService.totalItemCount; i++) {
+      if (isProject) {
+        final project = itemService.getProjectAtPosition(i);
+        if (project?.id == itemId) {
+          targetIndex = i;
           break;
         }
-        
-        // Wait a bit before trying again
-        await Future.delayed(const Duration(milliseconds: 100));
+      } else {
+        final post = itemService.getPostAtPosition(i);
+        if (post?.id == itemId) {
+          targetIndex = i;
+          break;
+        }
       }
-    });
+    }
+    
+    if (targetIndex != -1) {
+      // Update selection first
+      positionTracker.updatePosition(
+        index: targetIndex,
+        selectedItemId: itemId,
+        isProject: isProject,
+      );
+      
+      // Wait for selection to be processed
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      // Then scroll to the item
+      await positionTracker.scrollToIndex(targetIndex);
+    }
   }
 
   void refresh() {

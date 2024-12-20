@@ -77,7 +77,8 @@ class FeedHeaderSearchSection extends StatelessWidget {
                         key: ValueKey('notification_bar'),
                         notifications: headerController.notifications ?? [],
                         onNotificationSelected: (notification) {
-                          headerController.selectNotification(notification, feedController);
+                          headerController.selectNotification(
+                              notification, feedController);
                         },
                         onClose: headerController.toggleNotificationMenu,
                       )
